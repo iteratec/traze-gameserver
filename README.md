@@ -8,7 +8,7 @@ The communication with the game server works via an MQTT message broker. There a
 ### Select an Game Instance
 You can query currently running Games. 
 
-hackaTron/games
+`hackaTron/games`
 ```json
 [
     {
@@ -24,7 +24,7 @@ hackaTron/games
 #### MQTT 
 If you want to write an ai pilot you can do so by parsing the MQTT repersentation of the grid. It is published on the MQTT Topic
 
-hackaTron/{instanceName}/grid
+`hackaTron/{instanceName}/grid`
 ```json
 grid: {
     height: 3,
@@ -38,7 +38,7 @@ grid: {
 ```
 In addition to the grid you might receive a list of currently active players.
 
-hackaTron/{instanceName}/players
+`hackaTron/{instanceName}/players`
 ```json
 currentPlayers: [
    {
@@ -68,14 +68,14 @@ TBD.
 #### Client Registration
 You send a request to join the game. In return you'll get a user token that allows you to control your bike. The Response will be sent to your private MQTT topic.
 
-/hackaTron/{instanceName}/join
+`/hackaTron/{instanceName}/join`
 ```json
 name: "yourFancyPublicUserHandle"
 ```
 
 If the server accepts your request you'll receive a message communicating your initial position. Once you give your first direction command your game starts.
 
-hackaTron/{instanceName}/player/{playerName}
+`hackaTron/{instanceName}/player/{playerName}`
 ```json
 you: {
     id: 1337,
@@ -88,7 +88,7 @@ you: {
 #### Steering your Light Cycle
 You steer by giving the directions for your next turn via an MQTT message. If you don't commit a course correction within the specified timeframe your light cycle will continue on it's previous path.
 
-hackaTron/{instanceName}/{playerId}/steer
+`hackaTron/{instanceName}/{playerId}/steer`
 ```json
 {
     course:"North",
@@ -101,7 +101,7 @@ The options for a course Change are North, South, East or West.
 #### Leaving a Game
 You may leave the game at any time.
 
-hackaTron/{instanceName}/{playerId}/bail
+`hackaTron/{instanceName}/{playerId}/bail`
 ```json
 playerToken: "yourSecretToken"
 ```
