@@ -56,6 +56,7 @@ currentPlayers: [
      owned: 1
    }
 ]
+```
 
 #### Web UI
 You can stream the UI onto your own web enabled device.
