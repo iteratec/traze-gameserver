@@ -19,7 +19,7 @@ type Grid = [[Marking]]
 
 type Coordinate = (Int, Int)
 
-data Direction = N | E | W | S
+data Course = N | E | W | S
     deriving (Show, Eq)
 
 data Player = Player {
@@ -29,7 +29,7 @@ data Player = Player {
 }
   deriving (Show, Eq)
 
-type Bike = [Coordinate]
+data Bike = Bike [Coordinate] ( Maybe Course )
 
 data Game = Game {
     grid    :: Grid,
@@ -62,7 +62,7 @@ validCoordinate (i, j) = i > 0 && j > 0 && i < gridSizeX && j < gridSizeY
 tupleApply :: (a -> c, b -> d) -> (a, b) -> (c, d)
 tupleApply (f, g) (a, b) = (f a, g b)
 
-stepCoordinate :: Direction -> Coordinate -> Coordinate
+stepCoordinate :: Course -> Coordinate -> Coordinate
 stepCoordinate N = tupleApply (subtract 1, id        )
 stepCoordinate E = tupleApply (id        , (+1)      )
 stepCoordinate W = tupleApply (id        , subtract 1)
