@@ -1,70 +1,75 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module HackaTron where
 
-import qualified Data.Text as Text
-import Control.Lens (set, ix)
-import Data.Char (chr, ord)
+import Data.Either
 
-gridSizeX :: Int
-gridSizeX = 5
-
-gridSizeY :: Int
-gridSizeY = 5
-
-data Marking =  Empty | Occupied Player
-    deriving (Show, Eq)
-
-type Grid = [[Marking]]
-
+-- A coordinate on the grid
 type Coordinate = (Int, Int)
+
+-- gridsize (xMax, yMax)
+type GridSize = (Int, Int)
 
 data Course = N | E | W | S
     deriving (Show, Eq)
 
-data Player = Player {
-    _id  :: Int,
-    name :: Text.Text,
-    bike :: Bike
-}
-  deriving (Show, Eq)
+-- the players id number
+type Player = Int
 
-data Bike = Bike [Coordinate] ( Maybe Course )
+data Bike = Bike {
+    player :: Player,
+    course :: Course,
+    currLocation :: Coordinate,
+    trail :: [Coordinate]
+} deriving (Show, Eq)
 
-data Game = Game {
-    grid    :: Grid,
-    players :: [Player]
-}
-    deriving (Show,Eq)
+type Trail = [Coordinate]
 
-emptyGrid :: Int -> Int -> Grid
-emptyGrid x y = replicate x $ replicate y Empty
+data Command = MoveCommand Player Move
+             | Quit Player
+-- a move of a player on the grid
+data Move = Steer Turn 
+          | Straight
 
--- renders a Grid into a String
-printGrid :: Grid -> String
-printGrid = foldr inner "" 
-  where inner :: [Marking] -> [Char] -> [Char]
-        inner m s = (foldMarking m) ++ "\n" ++ s
-        
-        foldMarking :: Foldable t => t Marking -> [Char]
-        foldMarking = foldr ((:) . printMarking) []
+data Turn = TurnLeft | TurnRight
 
-        printMarking :: Marking -> Char
-        printMarking Empty = ' '
-        printMarking (Occupied p) = chr $ ord '0' + (mod (_id p) 10)
+data Grid = Grid GridSize [Bike]
 
-setCoordinate :: Marking -> Coordinate -> Grid -> Grid
-setCoordinate mark (i, j) grid = set (ix i . ix j) mark grid
+data Death = Suicide Player
+           | Frag Player Player
+           | Collision Player Player 
 
-validCoordinate :: Coordinate -> Bool
-validCoordinate (i, j) = i > 0 && j > 0 && i < gridSizeX && j < gridSizeY
+drive :: Grid -> Bike -> Move -> Either Death Bike
+drive = undefined
+
+isValidMove :: Grid -> Bike -> Move -> Bool
+isValidMove = undefined
+
+driveBike :: Bike -> Move -> Bike
+driveBike b m = Bike (player b) (newCourse m) newLocation newTrail
+    where newCourse (Steer t)  = turn t $ course b
+          newCourse Straight = course b
+          
+          newLocation = stepCoordinate (newCourse m) (currLocation b)
+          newTrail = (currLocation b) : (trail b)
 
 tupleApply :: (a -> c, b -> d) -> (a, b) -> (c, d)
 tupleApply (f, g) (a, b) = (f a, g b)
 
 stepCoordinate :: Course -> Coordinate -> Coordinate
-stepCoordinate N = tupleApply (subtract 1, id        )
-stepCoordinate E = tupleApply (id        , (+1)      )
-stepCoordinate W = tupleApply (id        , subtract 1)
-stepCoordinate S = tupleApply ((+1)      , id        )
+stepCoordinate N = tupleApply (id        , (+1)      )
+stepCoordinate E = tupleApply ((+1)      , id        )
+stepCoordinate W = tupleApply (subtract 1, id        )
+stepCoordinate S = tupleApply (id        , subtract 1)
+
+
+turn :: Turn -> Course -> Course
+
+turn TurnLeft N = W
+turn TurnLeft E = N
+turn TurnLeft S = E
+turn TurnLeft W = S
+
+turn TurnRight N = E
+turn TurnRight E = S
+turn TurnRight S = W
+turn TurnRight W = N
 
