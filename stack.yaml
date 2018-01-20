@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-9.20
+resolver: lts-10.0
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -46,6 +46,9 @@ packages:
 
 # Extra package databases containing global packages
 # extra-package-dbs: []
+
+ghc-options:
+    "$everything": -Wall
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true

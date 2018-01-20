@@ -22,7 +22,6 @@ description:         Please see the README on Github at <https://github.com/asci
 dependencies:
 - base >= 4.7 && < 5
 - text >= 1.2 && < 2
-- lens >= 4.15 && < 5
 
 library:
   source-dirs: src
