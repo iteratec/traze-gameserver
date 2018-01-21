@@ -1,5 +1,8 @@
 module HackaTron where
 
+import Data.Either (lefts, rights)
+import Data.List (find)
+
 -- A coordinate on the grid
 type Coordinate = (Int, Int)
 
@@ -36,8 +39,41 @@ data Death = Suicide Player
            | Frag Player  Player
            | Collision Player Player 
 
-play :: Grid -> [Move] -> (Grid, [Death])
-play = undefined
+play :: Grid -> [Command] -> (Grid, [Death])
+play g cs = ((Grid (getGridSize g) bikes'), deaths)
+    where bikes' = rights $ executedCommands
+          deaths = lefts $ executedCommands
+          executedCommands = map (execCommand g) $ map (addStraightCommands cs) (getGridBikes g)
+
+-- make sure all bikes on the grid go straight if no command given
+addStraightCommands :: [Command] -> Bike -> Command
+addStraightCommands cs b = case command of
+    Nothing -> MoveCommand (player b) Straight
+    Just c  -> c
+    where command :: Maybe Command
+          command = find (\c -> getCommandPlayer c == (player b)) cs
+
+getCommandPlayer :: Command -> Player
+getCommandPlayer (MoveCommand p _) = p
+getCommandPlayer (Quit p) = p
+
+execCommand :: Grid -> Command -> Either Death Bike
+execCommand _ (Quit p) = Left $ Suicide p
+execCommand g (MoveCommand p m) = case (getBikeForPlayer g p) of
+    (Just b) -> drive g b m
+    (Nothing)  -> Left $ Suicide p
+
+getBikeForPlayer :: Grid -> Player -> Maybe Bike
+getBikeForPlayer (Grid _ bs) p = case (filter (\a -> p == player a) bs) of
+    []    -> Nothing
+    [x]   -> Just x
+    (x:_) -> Just x
+
+getGridSize :: Grid -> GridSize
+getGridSize (Grid gs _ ) = gs
+
+getGridBikes :: Grid -> [Bike]
+getGridBikes (Grid _ bs) = bs
 
 drive :: Grid -> Bike -> Move -> Either Death Bike
 drive g b m = case death of
@@ -46,7 +82,6 @@ drive g b m = case death of
 
     where newCord = stepCoordinate course' (currLocation b)
           course' = newCourse (course b) m
-          getGridSize (Grid gs _ ) = gs
           
           death = getFirstJust $ (getWallKiss $ getGridSize g) : (getFrag g b m) : []
 
