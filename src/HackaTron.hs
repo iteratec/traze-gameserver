@@ -87,7 +87,7 @@ drive g b m = case death of
 
           -- get death if out of grid
           getWallKiss :: GridSize -> Maybe Death
-          getWallKiss gridSize = if newCord >= gridSize
+          getWallKiss gridSize = if (newCord < (0,0)) || (newCord >= gridSize)
               then Just (Suicide (player b))
               else Nothing
 
@@ -129,9 +129,6 @@ newCourse :: Course -> Move -> Course
 newCourse c Straight   = c
 newCourse c (Steer t)  = turn t $ c
 
-tupleApply :: (a -> c, b -> d) -> (a, b) -> (c, d)
-tupleApply (f, g) (a, b) = (f a, g b)
-
 stepCoordinate :: Course -> Coordinate -> Coordinate
 stepCoordinate N = tupleApply (id        , (+1)      )
 stepCoordinate E = tupleApply ((+1)      , id        )
@@ -150,4 +147,33 @@ turn TurnRight N = E
 turn TurnRight E = S
 turn TurnRight S = W
 turn TurnRight W = N
+
+spawnPlayer :: Grid -> (Grid, Bike)
+spawnPlayer = undefined
+
+awayFromBike :: Coordinate -> Bike -> Int
+awayFromBike c b = round squareRoot
+    where
+        squareRoot :: Double
+        squareRoot  = sqrt $
+            tupleFold (+) $
+            tupleDo fromIntegral $
+            tupleDo ((flip (^)) (2 :: Int)) $
+            tupleDo abs $
+            tupleMap (+) c (currLocation b)
+
+awayFromWalls :: Coordinate -> GridSize -> Int
+awayFromWalls c gs = tupleFold min $ tupleMap (-) gs c
+
+tupleDo :: (a -> b) -> (a, a) -> (b, b)
+tupleDo f (x, y) = (f x, f y)
+
+tupleFold :: (a -> b -> c) -> (a, b) -> c
+tupleFold f (x, y) = f x y
+
+tupleMap :: (a -> b -> c) -> (a, a) -> (b, b) -> (c, c)
+tupleMap f (x1, y1) (x2, y2) = (x1 `f` x2, y1 `f` y2)
+
+tupleApply :: (a -> c, b -> d) -> (a, b) -> (c, d)
+tupleApply (f, g) (a, b) = (f a, g b)
 
