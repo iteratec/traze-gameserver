@@ -2,6 +2,7 @@ module HackaTron where
 
 import Data.Either (lefts, rights)
 import Data.List (find)
+import Data.Maybe (fromJust)
 
 -- A coordinate on the grid
 type Coordinate = (Int, Int)
@@ -33,6 +34,7 @@ data Move = Steer Turn
 data Turn = TurnLeft | TurnRight
 
 data Grid = Grid GridSize [Bike]
+    deriving (Show, Eq)
 
 data Death = Suicide Player
            --     Casulty Killer
@@ -148,11 +150,45 @@ turn TurnRight E = S
 turn TurnRight S = W
 turn TurnRight W = N
 
-spawnPlayer :: Grid -> (Grid, Bike)
-spawnPlayer = undefined
+spawnPlayer :: Grid -> (Grid, Maybe Bike)
+spawnPlayer g = case spawnCoord of
+    Nothing   -> (g, Nothing)
+    Just _ -> (Grid (getGridSize g) (b : (getGridBikes g)), Just b)
+    where b = Bike (newPlayerId (map (player) $ getGridBikes g)) N (fromJust spawnCoord) []
+          spawnCoord = getSpawnCoord g
 
-awayFromBike :: Coordinate -> Bike -> Int
-awayFromBike c b = round squareRoot
+newPlayerId :: [Player] -> Player
+newPlayerId ps = head $
+    filter (not . (flip elem ps))
+    [x | x <- [1..]]
+
+getSpawnCoord :: Grid -> Maybe Coordinate
+getSpawnCoord g = case free of
+    []        -> Nothing
+    cs -> Just $ snd $ maximum $ map (scoreAndCord g) cs
+    where free = allFreeCoords g
+
+scoreAndCord :: Grid -> Coordinate -> (Int, Coordinate)
+scoreAndCord g c = (spawnScore g c, c)
+
+spawnScore :: Grid -> Coordinate -> Int
+spawnScore g c = (awayFromAnyBike g c) + (awayFromWalls g c)
+
+allFreeCoords :: Grid -> [Coordinate]
+allFreeCoords (Grid gs bs) = filter (not . (flip elem $ allBikeTrailCords bs)) (allCoords gs)
+
+allBikeTrailCords :: [Bike] -> [Coordinate]
+allBikeTrailCords = concatMap (trail)
+
+allCoords :: GridSize -> [Coordinate]
+allCoords (maxX, maxY) = [(x, y) | x <- [0..(maxX - 1)], y <- [0..(maxY - 1)]]
+
+awayFromAnyBike :: Grid -> Coordinate -> Int
+awayFromAnyBike (Grid _ []) _ = 0
+awayFromAnyBike (Grid _ bs) c = minimum $ map (flip awayFromBike c) bs
+
+awayFromBike :: Bike -> Coordinate -> Int
+awayFromBike b c = round squareRoot
     where
         squareRoot :: Double
         squareRoot  = sqrt $
@@ -162,8 +198,8 @@ awayFromBike c b = round squareRoot
             tupleDo abs $
             tupleMap (+) c (currLocation b)
 
-awayFromWalls :: Coordinate -> GridSize -> Int
-awayFromWalls c gs = tupleFold min $ tupleMap (-) gs c
+awayFromWalls :: Grid -> Coordinate -> Int
+awayFromWalls (Grid gs _) c = tupleFold min $ tupleMap (-) gs c
 
 tupleDo :: (a -> b) -> (a, a) -> (b, b)
 tupleDo f (x, y) = (f x, f y)
