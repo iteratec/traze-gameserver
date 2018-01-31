@@ -47,3 +47,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - hackaTron
+    - hspec >= 2.4 && < 3
+    - QuickCheck >= 2.10 && < 3
