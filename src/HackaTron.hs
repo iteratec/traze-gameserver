@@ -13,47 +13,83 @@ type GridSize = (Int, Int)
 data Course = N | E | W | S
     deriving (Show, Eq)
 
--- the players id number
+-- the unPlayers id number
 type Player = Int
 
 data Bike = Bike {
-    player :: Player,
-    course :: Course,
-    currLocation :: Coordinate,
-    trail :: [Coordinate]
+    unPlayer :: Player,
+    unCourse :: Course,
+    unCurrentLocation :: Coordinate,
+    unTrail :: [Coordinate]
 } deriving (Show, Eq)
 
 type Trail = [Coordinate]
 
 data Command = MoveCommand Player Move
              | Quit Player
--- a move of a player on the grid
+-- a move of a unPlayer on the grid
 data Move = Steer Turn 
           | Straight
 
 data Turn = TurnLeft | TurnRight
 
-data Grid = Grid GridSize [Bike]
-    deriving (Show, Eq)
+data Grid = Grid {
+    unGridSize :: GridSize
+   ,unBikes    :: [Bike] 
+   ,unQueue    :: [QueueItem Bike]
+} deriving (Show, Eq)
+
+-- ticks to start playing
+type TimeToLive = Int
+
+data QueueItem a = QueueItem TimeToLive a
+  deriving (Show, Eq)
+
+unQueueBike :: QueueItem Bike -> Bike
+unQueueBike (QueueItem _ b) = b
+
+ttl :: TimeToLive
+ttl = 50
+
+enQueue :: a -> QueueItem a
+enQueue a = QueueItem ttl a
+
+retrieveQueueItem :: QueueItem a -> a
+retrieveQueueItem (QueueItem _ a) = a
 
 data Death = Suicide Player
            --     Casulty Killer
            | Frag Player  Player
            | Collision Player Player 
 
-play :: Grid -> [Command] -> (Grid, [Death])
-play g cs = ((Grid (getGridSize g) bikes'), deaths)
+-- | The 'play' function plays one round. It takes a list of 
+-- Commands and generates the next game state as well as 
+play :: Grid           -- ^ The current game state
+    -> [Command]       -- ^ The list of commands given by the players for this turn
+    -> (Grid, [Death]) -- ^ The resulting game state, the list of deaths resulting from this turn
+play g cs = ((Grid (unGridSize g) bikes' queue'), deaths)
     where bikes' = rights $ executedCommands
           deaths = lefts $ executedCommands
-          executedCommands = map (execCommand g) $ map (addStraightCommands cs) (getGridBikes g)
+          executedCommands = map (execCommand g) $ map (addStraightCommands cs) ((unBikes g) ++ joinedBikes)
+          (queue', joinedBikes) = popFromQueue (unQueue g) cs
+
+-- | 
+popFromQueue :: [QueueItem Bike] -> [Command] -> ([QueueItem Bike], [Bike])
+popFromQueue qs cs = (queue', bikes)
+    where bikes = filter (hasCommand cs) (map unQueueBike qs)
+          queue' = filter (findPlayerInQueue bikes) qs 
+          hasCommand :: [Command] -> Bike -> Bool
+          hasCommand coms b = (unPlayer b) `elem` (map getCommandPlayer coms)
+          findPlayerInQueue :: [Bike] -> QueueItem Bike -> Bool
+          findPlayerInQueue bs item = (unPlayer (unQueueBike item)) `elem` (map unPlayer bs)
 
 -- make sure all bikes on the grid go straight if no command given
 addStraightCommands :: [Command] -> Bike -> Command
 addStraightCommands cs b = case command of
-    Nothing -> MoveCommand (player b) Straight
+    Nothing -> MoveCommand (unPlayer b) Straight
     Just c  -> c
     where command :: Maybe Command
-          command = find (\c -> getCommandPlayer c == (player b)) cs
+          command = find (\c -> getCommandPlayer c == (unPlayer b)) cs
 
 getCommandPlayer :: Command -> Player
 getCommandPlayer (MoveCommand p _) = p
@@ -66,47 +102,41 @@ execCommand g (MoveCommand p m) = case (getBikeForPlayer g p) of
     (Nothing)  -> Left $ Suicide p
 
 getBikeForPlayer :: Grid -> Player -> Maybe Bike
-getBikeForPlayer (Grid _ bs) p = case (filter (\a -> p == player a) bs) of
+getBikeForPlayer (Grid _ bs _) p = case (filter (\a -> p == unPlayer a) bs) of
     []    -> Nothing
     [x]   -> Just x
     (x:_) -> Just x
-
-getGridSize :: Grid -> GridSize
-getGridSize (Grid gs _ ) = gs
-
-getGridBikes :: Grid -> [Bike]
-getGridBikes (Grid _ bs) = bs
 
 drive :: Grid -> Bike -> Move -> Either Death Bike
 drive g b m = case death of
     Just d -> Left d
     Nothing -> Right $ driveBike b m
 
-    where newCord = stepCoordinate course' (currLocation b)
-          course' = newCourse (course b) m
+    where newCord = stepCoordinate unCourse' (unCurrentLocation b)
+          unCourse' = newCourse (unCourse b) m
           
-          death = getFirstJust $ (getWallKiss $ getGridSize g) : (getFrag g b m) : []
+          death = getFirstJust $ (getWallKiss $ unGridSize g) : (getFrag g b m) : []
 
           -- get death if out of grid
           getWallKiss :: GridSize -> Maybe Death
           getWallKiss gridSize = if (newCord < (0,0)) || (newCord >= gridSize)
-              then Just (Suicide (player b))
+              then Just (Suicide (unPlayer b))
               else Nothing
 
--- returns the death caused by hitting a trail
+-- returns the death caused by hitting a unTrail
 getFrag :: Grid -> Bike -> Move -> Maybe Death
-getFrag (Grid _ bikes) b m = case fragger of
+getFrag (Grid _ bikes _) b m = case fragger of
     Nothing -> Nothing
-    Just f -> Just $ getDeath (player f) (player b)
+    Just f -> Just $ getDeath (unPlayer f) (unPlayer b)
 
     where fragger :: Maybe Bike
           fragger = getFirstJust $ fmap (droveInTrail $ newCord) bikes
 
-          course' = newCourse (course b) m
-          newCord = stepCoordinate course' (currLocation b)
+          unCourse' = newCourse (unCourse b) m
+          newCord = stepCoordinate unCourse' (unCurrentLocation b)
 
           droveInTrail :: Coordinate -> Bike -> Maybe Bike
-          droveInTrail c bike =  if c `elem` (trail bike)
+          droveInTrail c bike =  if c `elem` (unTrail bike)
               then Just bike
               else Nothing
 
@@ -123,9 +153,9 @@ getFirstJust (_:xs) = getFirstJust xs
 
 -- execute a single move
 driveBike :: Bike -> Move -> Bike
-driveBike b m = Bike (player b) (newCourse (course b) m) newLocation newTrail
-    where newLocation = stepCoordinate (newCourse (course b) m) (currLocation b)
-          newTrail = (currLocation b) : (trail b)
+driveBike b m = Bike (unPlayer b) (newCourse (unCourse b) m) newLocation newTrail
+    where newLocation = stepCoordinate (newCourse (unCourse b) m) (unCurrentLocation b)
+          newTrail = (unCurrentLocation b) : (unTrail b)
 
 newCourse :: Course -> Move -> Course
 newCourse c Straight   = c
@@ -153,14 +183,13 @@ turn TurnRight W = N
 spawnPlayer :: Grid -> (Grid, Maybe Bike)
 spawnPlayer g = case spawnCoord of
     Nothing   -> (g, Nothing)
-    Just _ -> (Grid (getGridSize g) (b : (getGridBikes g)), Just b)
-    where b = Bike (newPlayerId (map (player) $ getGridBikes g)) N (fromJust spawnCoord) []
+    Just _ -> (Grid (unGridSize g) (unBikes g) ((enQueue b) : (unQueue g)), Just b)
+    where b = Bike (newPlayerId (map (unPlayer) $ unBikes g)) N (fromJust spawnCoord) []
           spawnCoord = getSpawnCoord g
 
 newPlayerId :: [Player] -> Player
-newPlayerId ps = head $
-    filter (not . (flip elem ps))
-    [x | x <- [1..]]
+newPlayerId ps = x
+    where Just x = find (`notElem` ps) [1..]
 
 getSpawnCoord :: Grid -> Maybe Coordinate
 getSpawnCoord g = case free of
@@ -175,17 +204,18 @@ spawnScore :: Grid -> Coordinate -> Int
 spawnScore g c = (awayFromAnyBike g c) + (awayFromWalls g c)
 
 allFreeCoords :: Grid -> [Coordinate]
-allFreeCoords (Grid gs bs) = filter (not . (flip elem $ allBikeTrailCords bs)) (allCoords gs)
+allFreeCoords (Grid gs bs q) = filter (not . (flip elem $ allBikeTrailCords bs ++ queuedCoords)) (allCoords gs)
+    where queuedCoords = (map (unCurrentLocation . retrieveQueueItem) q)
 
 allBikeTrailCords :: [Bike] -> [Coordinate]
-allBikeTrailCords = concatMap (trail)
+allBikeTrailCords = concatMap (unTrail)
 
 allCoords :: GridSize -> [Coordinate]
 allCoords (maxX, maxY) = [(x, y) | x <- [0..(maxX - 1)], y <- [0..(maxY - 1)]]
 
 awayFromAnyBike :: Grid -> Coordinate -> Int
-awayFromAnyBike (Grid _ []) _ = 0
-awayFromAnyBike (Grid _ bs) c = minimum $ map (flip awayFromBike c) bs
+awayFromAnyBike (Grid _ [] _) _ = 0
+awayFromAnyBike (Grid _ bs _) c = minimum $ map (flip awayFromBike c) bs
 
 awayFromBike :: Bike -> Coordinate -> Int
 awayFromBike b c = round squareRoot
@@ -196,10 +226,10 @@ awayFromBike b c = round squareRoot
             tupleDo fromIntegral $
             tupleDo ((flip (^)) (2 :: Int)) $
             tupleDo abs $
-            tupleMap (+) c (currLocation b)
+            tupleMap (+) c (unCurrentLocation b)
 
 awayFromWalls :: Grid -> Coordinate -> Int
-awayFromWalls (Grid gs _) c = tupleFold min $ tupleMap (-) gs c
+awayFromWalls (Grid gs _ _) c = tupleFold min $ tupleMap (-) gs c
 
 tupleDo :: (a -> b) -> (a, a) -> (b, b)
 tupleDo f (x, y) = (f x, f y)
