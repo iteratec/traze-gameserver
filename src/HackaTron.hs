@@ -61,6 +61,7 @@ data Death = Suicide Player
            --     Casulty Killer
            | Frag Player  Player
            | Collision Player Player 
+    deriving (Show, Eq)
 
 -- | The 'play' function plays one round. It takes a list of 
 -- Commands and generates the next game state as well as 
@@ -119,9 +120,17 @@ drive g b m = case death of
 
           -- get death if out of grid
           getWallKiss :: GridSize -> Maybe Death
-          getWallKiss gridSize = if (newCord < (0,0)) || (newCord >= gridSize)
+          getWallKiss gridSize = if (isOutOfBounds newCord gridSize)
               then Just (Suicide (unPlayer b))
               else Nothing
+
+isOutOfBounds :: Coordinate -> Coordinate -> Bool
+isOutOfBounds (x1,y1) (x2, y2)
+    | x1 >= x2  = True
+    | y1 >= y2  = True
+    | x1 < 0    = True
+    | y1 < 0    = True
+    | otherwise = False
 
 -- returns the death caused by hitting a unTrail
 getFrag :: Grid -> Bike -> Move -> Maybe Death
