@@ -217,7 +217,7 @@ allFreeCoords (Grid gs bs q) = filter (not . (flip elem $ allBikeTrailCords bs +
     where queuedCoords = (map (unCurrentLocation . retrieveQueueItem) q)
 
 allBikeTrailCords :: [Bike] -> [Coordinate]
-allBikeTrailCords = concatMap (unTrail)
+allBikeTrailCords bs = concatMap (\x -> ((unCurrentLocation x) : (unTrail x))) bs
 
 allCoords :: GridSize -> [Coordinate]
 allCoords (maxX, maxY) = [(x, y) | x <- [0..(maxX - 1)], y <- [0..(maxY - 1)]]

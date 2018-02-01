@@ -77,3 +77,12 @@ main = hspec $ do
     describe "play: two bikes on a 3x3 grid" $ do
         it "both go straight, reaching the same sqare at the same time" $ do
             play grid3 [] `shouldBe` (Grid (3,3) [] [], [Suicide 1, Suicide 2])
+
+
+    describe "spawn player" $ do
+        it "spawn second player on grid" $ do
+            let (grid', Just newBike) = (spawnPlayer grid1)
+            length (unBikes grid') `shouldBe` 1
+            length (unQueue grid') `shouldBe` 1
+            ((unCurrentLocation newBike) `elem` allBikeTrailCords (unBikes grid')) `shouldBe` False
+           
