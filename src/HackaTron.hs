@@ -58,7 +58,7 @@ retrieveQueueItem :: QueueItem a -> a
 retrieveQueueItem (QueueItem _ a) = a
 
 data Death = Suicide Player
-           --     Casulty Killer
+           --     Killer  Casulty
            | Frag Player  Player
            | Collision Player Player 
     deriving (Show, Eq)
@@ -145,7 +145,7 @@ getFrag (Grid _ bikes _) b m = case fragger of
           newCord = stepCoordinate unCourse' (unCurrentLocation b)
 
           droveInTrail :: Coordinate -> Bike -> Maybe Bike
-          droveInTrail c bike =  if c `elem` (unTrail bike)
+          droveInTrail c bike =  if c `elem` ( unCurrentLocation bike : (unTrail bike))
               then Just bike
               else Nothing
 
