@@ -28,10 +28,8 @@ type Trail = [Coordinate]
 data Command = MoveCommand Player Move
              | Quit Player
 -- a move of a unPlayer on the grid
-data Move = Steer Turn 
+data Move = Steer Course 
           | Straight
-
-data Turn = TurnLeft | TurnRight
 
 data Grid = Grid {
     unGridSize :: GridSize
@@ -168,26 +166,13 @@ driveBike b m = Bike (unPlayer b) (newCourse (unCourse b) m) newLocation newTrai
 
 newCourse :: Course -> Move -> Course
 newCourse c Straight   = c
-newCourse c (Steer t)  = turn t $ c
+newCourse _ (Steer t)  = t
 
 stepCoordinate :: Course -> Coordinate -> Coordinate
 stepCoordinate N = tupleApply (id        , (+1)      )
 stepCoordinate E = tupleApply ((+1)      , id        )
 stepCoordinate W = tupleApply (subtract 1, id        )
 stepCoordinate S = tupleApply (id        , subtract 1)
-
-
-turn :: Turn -> Course -> Course
-
-turn TurnLeft N = W
-turn TurnLeft E = N
-turn TurnLeft S = E
-turn TurnLeft W = S
-
-turn TurnRight N = E
-turn TurnRight E = S
-turn TurnRight S = W
-turn TurnRight W = N
 
 spawnPlayer :: Grid -> (Grid, Maybe Bike)
 spawnPlayer g = case spawnCoord of
