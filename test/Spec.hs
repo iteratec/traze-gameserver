@@ -113,3 +113,8 @@ main = hspec $ do
             assertEqual "queue is not empty after pop" 2 $ length queue
             assertEqual "bike has not spawned after pop" 1 $ length bikes
 
+    describe "ageQueue" $ do
+        it "age out two" $ do
+            ageQueue [QueueItem 1 'a', QueueItem 3 'b', QueueItem 1 'c'] `shouldBe` [ QueueItem 2 'b']
+        it "age out none" $ do
+            ageQueue [QueueItem 3 'a', QueueItem 2 'b'] `shouldBe` [ QueueItem 2 'a', QueueItem 1 'b']

@@ -47,13 +47,16 @@ unQueueBike :: QueueItem Bike -> Bike
 unQueueBike (QueueItem _ b) = b
 
 ttl :: TimeToLive
-ttl = 50
+ttl = 15
 
 enQueue :: a -> QueueItem a
 enQueue a = QueueItem ttl a
 
 retrieveQueueItem :: QueueItem a -> a
 retrieveQueueItem (QueueItem _ a) = a
+
+retrieveQueueTtl :: QueueItem a -> TimeToLive
+retrieveQueueTtl (QueueItem t _) = t
 
 data Death = Suicide Player
            --     Killer  Casulty
@@ -70,7 +73,14 @@ play g cs = ((Grid (unGridSize g) bikes' queue'), deaths)
     where bikes' = rights $ executedCommands
           deaths = lefts $ executedCommands
           executedCommands = map (execCommand g) $ map (addStraightCommands cs) ((unBikes g) ++ joinedBikes)
-          (queue', joinedBikes) = popFromQueue (unQueue g) cs
+          (popedQueue, joinedBikes) = popFromQueue (unQueue g) cs
+          queue' = ageQueue popedQueue
+
+ageQueue :: [QueueItem a] -> [QueueItem a]
+ageQueue qs = filter (not . (<=0) . retrieveQueueTtl) $ map decTtl qs
+
+decTtl :: QueueItem a -> QueueItem a
+decTtl (QueueItem t a) = QueueItem (t-1) a
 
 -- | 
 popFromQueue :: [QueueItem Bike] -> [Command] -> ([QueueItem Bike], [Bike])
