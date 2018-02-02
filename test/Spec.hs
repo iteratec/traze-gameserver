@@ -1,6 +1,10 @@
+import HackaTron
+import SpawnQueue
+import GameTypes
+import SpawnPlayer
+
 import Test.Hspec
 import Test.HUnit
-import HackaTron
 
 bike1 :: Bike
 bike1 = Bike 1 E (2,1) [ (1,1) , (0,1) ]
