@@ -1,4 +1,5 @@
 import Test.Hspec
+import Test.HUnit
 import HackaTron
 
 bike1 :: Bike
@@ -6,6 +7,9 @@ bike1 = Bike 1 E (2,1) [ (1,1) , (0,1) ]
 
 bike2 :: Bike
 bike2 = Bike 2 N (2,7) [ (2,6) , (2,5) , (2,4) ]
+
+bike3 :: Bike
+bike3 = Bike 3 W (1,1) []
 
 grid1 :: Grid
 grid1 = Grid (3,3) [(Bike 1 N (1,2) [(1,1), (2,1), (2,2)])] [] 
@@ -82,7 +86,30 @@ main = hspec $ do
     describe "spawn player" $ do
         it "spawn second player on grid" $ do
             let (grid', Just newBike) = (spawnPlayer grid1)
-            length (unBikes grid') `shouldBe` 1
-            length (unQueue grid') `shouldBe` 1
-            ((unCurrentLocation newBike) `elem` allBikeTrailCords (unBikes grid')) `shouldBe` False
-           
+            assertEqual "still one bike after spawn " 1 $ length (unBikes grid')
+            assertEqual "one player queued after spawn" 1 $ length (unQueue grid')
+            assertBool "spawned players location is not on a trail" $ not $ ((unCurrentLocation newBike) `elem` allBikeTrailCords (unBikes grid'))
+            let (grid'', deaths) = play grid' [(MoveCommand 1 (Steer W))]
+            assertEqual "after first move player 1 didn't die" 0 $ length deaths
+            assertEqual "the queued player didn't move so he's not on the grid" 1 $ length (unBikes grid'')
+            assertEqual "the queued player didn't move so he's still queued" 1 $ length (unQueue grid'')
+            let (grid''', deaths') = play grid'' [(MoveCommand 1 (Steer S)), (MoveCommand 2 (Steer W))]
+            assertEqual "after move 2 moving nobody died" 0 $ length deaths'
+            assertEqual "after moving there are two bikes on grid" 2 $ length (unBikes grid''')
+            assertEqual "the queued player spawned so there is an empty queue" 0 $ length (unQueue grid''')
+
+
+    describe "popFromQueue" $ do
+        it "pop one item" $ do
+            let (queue, bikes) = popFromQueue [(QueueItem 1 bike1)] [(MoveCommand 1 Straight)]
+            assertEqual "queue is empty after pop" 0 $ length queue
+            assertEqual "bike has spawned after pop" 1 $ length bikes
+        it "don't pop item" $ do
+            let (queue, bikes) = popFromQueue [(QueueItem 1 bike1)] [(MoveCommand 2 Straight)]
+            assertEqual "queue is not empty after pop" 1 $ length queue
+            assertEqual "bike has not spawned after pop" 0 $ length bikes
+        it "don't pop item" $ do
+            let (queue, bikes) = popFromQueue [(QueueItem 1 bike1),(QueueItem 1 bike2), QueueItem 1 bike3] [(MoveCommand 2 Straight)]
+            assertEqual "queue is not empty after pop" 2 $ length queue
+            assertEqual "bike has not spawned after pop" 1 $ length bikes
+

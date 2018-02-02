@@ -48,4 +48,5 @@ tests:
     dependencies:
     - hackaTron
     - hspec >= 2.4 && < 3
+    - HUnit >= 1.6 && < 1.7
     - QuickCheck >= 2.10 && < 3

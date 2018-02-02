@@ -76,7 +76,7 @@ play g cs = ((Grid (unGridSize g) bikes' queue'), deaths)
 popFromQueue :: [QueueItem Bike] -> [Command] -> ([QueueItem Bike], [Bike])
 popFromQueue qs cs = (queue', bikes)
     where bikes = filter (hasCommand cs) (map unQueueBike qs)
-          queue' = filter (findPlayerInQueue bikes) qs 
+          queue' = filter (not . (findPlayerInQueue bikes)) qs
           hasCommand :: [Command] -> Bike -> Bool
           hasCommand coms b = (unPlayer b) `elem` (map getCommandPlayer coms)
           findPlayerInQueue :: [Bike] -> QueueItem Bike -> Bool
@@ -101,10 +101,9 @@ execCommand g (MoveCommand p m) = case (getBikeForPlayer g p) of
     (Nothing)  -> Left $ Suicide p
 
 getBikeForPlayer :: Grid -> Player -> Maybe Bike
-getBikeForPlayer (Grid _ bs _) p = case (filter (\a -> p == unPlayer a) bs) of
-    []    -> Nothing
-    [x]   -> Just x
-    (x:_) -> Just x
+getBikeForPlayer (Grid _ bs q) p =
+    let allBikes = bs ++ (map unQueueBike q) in
+        (find (\a -> p == unPlayer a) allBikes)
 
 drive :: Grid -> Bike -> Move -> Either Death Bike
 drive g b m = case death of
