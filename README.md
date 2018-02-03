@@ -1,4 +1,4 @@
-# hackaTron
+# traze
 
 This repository contains a tron like game that can be played by sending mqtt messages to the server. 
 
@@ -8,7 +8,7 @@ The communication with the game server works via an MQTT message broker. There a
 ### Select an Game Instance
 You can query currently running Games. 
 
-`hackaTron/games`
+`traze/games`
 ```json
 [
     {
@@ -24,7 +24,7 @@ You can query currently running Games.
 #### MQTT 
 If you want to write an ai pilot you can do so by parsing the MQTT repersentation of the grid. It is published on the MQTT Topic
 
-`hackaTron/{instanceName}/grid`
+`traze/{instanceName}/grid`
 ```json
 grid: {
     height: 3,
@@ -38,7 +38,7 @@ grid: {
 ```
 In addition to the grid you might receive a list of currently active players.
 
-`hackaTron/{instanceName}/players`
+`traze/{instanceName}/players`
 ```json
 currentPlayers: [
    {
@@ -68,14 +68,14 @@ TBD.
 #### Client Registration
 You send a request to join the game. In return you'll get a user token that allows you to control your bike. The Response will be sent to your private MQTT topic.
 
-`/hackaTron/{instanceName}/join`
+`/traze/{instanceName}/join`
 ```json
 name: "yourFancyPublicUserHandle"
 ```
 
 If the server accepts your request you'll receive a message communicating your initial position. Once you give your first direction command your game starts.
 
-`hackaTron/{instanceName}/player/{playerName}`
+`traze/{instanceName}/player/{playerName}`
 ```json
 you: {
     id: 1337,
@@ -88,7 +88,7 @@ you: {
 #### Steering your Light Cycle
 You steer by giving the directions for your next turn via an MQTT message. If you don't commit a course correction within the specified timeframe your light cycle will continue on it's previous path.
 
-`hackaTron/{instanceName}/{playerId}/steer`
+`traze/{instanceName}/{playerId}/steer`
 ```json
 {
     course:"North",
@@ -101,7 +101,25 @@ The options for a course Change are North, South, East or West.
 #### Leaving a Game
 You may leave the game at any time.
 
-`hackaTron/{instanceName}/{playerId}/bail`
+`traze/{instanceName}/{playerId}/bail`
 ```json
 playerToken: "yourSecretToken"
 ```
+
+## Development
+This section aims to help you getting started to contribute to the traze game server. 
+
+### Technology stack
+This software is written in `Haskell`, a purely functional programming language. It uses the `stack` build tool for compilation. 
+
+If you just want to run the game server locally without setting up a Haskell development environment you can do so by using Docker. You can either pull the image from the registry or build it yourself using `docker build` in the project root directory.
+
+If you want to make changes to the source code you will want to build the software outside of docker. For that you just need to install the stack tool. It will download a fitting compiler environment for you.
+
+Once you have installed stack you can build the binaries by issuing the following command from the project root directory.
+
+```
+stack build
+```
+
+To run the test suite use `stack test`. You can also have stack create an interactive _read evaluate print loop_ environment, the so called _REPL_ for you with `stack ghci`.
