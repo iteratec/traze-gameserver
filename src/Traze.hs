@@ -1,4 +1,4 @@
-module HackaTron where
+module Traze where
 
 import GameTypes
 import SpawnQueue

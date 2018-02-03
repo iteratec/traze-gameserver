@@ -1,6 +1,6 @@
-name:                hackaTron
+name:                traze
 version:             0.1.0.0
-github:              "asciijungle/hackaTron"
+github:              "asciijungle/traze"
 license:             BSD3
 author:              "Benjamin Brunzel"
 maintainer:          "example@example.com"
@@ -11,13 +11,13 @@ extra-source-files:
 - ChangeLog.md
 
 # Metadata used when publishing your package
-synopsis:            Tron like mqtt based game
+synopsis:            Tron like mqtt based game server
 category:            Game
 
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/asciijungle/hackaTron#readme>
+description:         Please see the README on Github at <https://github.com/asciijungle/traze#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -27,7 +27,7 @@ library:
   source-dirs: src
 
 executables:
-  hackaTron-exe:
+  traze-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -35,10 +35,10 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - hackaTron
+    - traze
 
 tests:
-  hackaTron-test:
+  traze-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -46,7 +46,7 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - hackaTron
+    - traze
     - hspec >= 2.4 && < 3
     - HUnit >= 1.6 && < 1.7
     - QuickCheck >= 2.10 && < 3

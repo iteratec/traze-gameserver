@@ -1,4 +1,4 @@
-import HackaTron
+import Traze
 import SpawnQueue
 import GameTypes
 import SpawnPlayer

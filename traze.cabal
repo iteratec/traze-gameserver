@@ -1,0 +1,74 @@
+-- This file has been generated from package.yaml by hpack version 0.20.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: ac13482503d26b4bd285b3eea7b916716fdec0847d2d5cb722618ac98a2323e9
+
+name:           traze
+version:        0.1.0.0
+synopsis:       Tron like mqtt based game server
+description:    Please see the README on Github at <https://github.com/asciijungle/traze#readme>
+category:       Game
+homepage:       https://github.com/asciijungle/traze#readme
+bug-reports:    https://github.com/asciijungle/traze/issues
+author:         Benjamin Brunzel
+maintainer:     example@example.com
+copyright:      2017 Benjamin Brunzel
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    ChangeLog.md
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/asciijungle/traze
+
+library
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , text >=1.2 && <2
+  exposed-modules:
+      GameTypes
+      SpawnPlayer
+      SpawnQueue
+      Traze
+      Tuple
+  other-modules:
+      Paths_traze
+  default-language: Haskell2010
+
+executable traze-exe
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , text >=1.2 && <2
+    , traze
+  other-modules:
+      Paths_traze
+  default-language: Haskell2010
+
+test-suite traze-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HUnit >=1.6 && <1.7
+    , QuickCheck >=2.10 && <3
+    , base >=4.7 && <5
+    , hspec >=2.4 && <3
+    , text >=1.2 && <2
+    , traze
+  other-modules:
+      Paths_traze
+  default-language: Haskell2010

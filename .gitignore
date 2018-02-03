@@ -1,4 +1,4 @@
 .stack-work/
 hackaTron.cabal
-.swp
+*.swp
 *~
