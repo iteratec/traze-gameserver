@@ -6,9 +6,10 @@ import Data.Maybe
 import Control.Monad
 import Data.List
 
-printGrid :: Grid -> IO ()
+printGrid :: Grid -> IO Grid
 printGrid g = do
     mapM_ putStrLn $ gridToLineStrings g
+    return g
 
 gridToLineStrings :: Grid -> [String]
 gridToLineStrings g = (map . map) (getPosChar g) $ getGridCoords $ unGridSize g 
