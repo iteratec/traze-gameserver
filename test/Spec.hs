@@ -122,3 +122,10 @@ main = hspec $ do
             ageQueue [QueueItem 1 'a', QueueItem 3 'b', QueueItem 1 'c'] `shouldBe` [ QueueItem 2 'b']
         it "age out none" $ do
             ageQueue [QueueItem 3 'a', QueueItem 2 'b'] `shouldBe` [ QueueItem 2 'a', QueueItem 1 'b']
+
+    describe "removeDuplicateCommands" $ do
+        it "has duplicates" $ do
+            removeDuplicateCommands [MoveCommand 1 (Steer N), MoveCommand 2 (Steer E), Quit 1] `shouldBe` [Quit 1, MoveCommand 2 (Steer E)] 
+            removeDuplicateCommands [MoveCommand 1 (Steer N), Quit 3, MoveCommand 2 (Steer E), Quit 1, Quit 3] `shouldBe` [Quit 1, MoveCommand 2 (Steer E), Quit 3] 
+        it "has no duplicates" $ do
+            removeDuplicateCommands [MoveCommand 1 (Steer N)] `shouldBe` [MoveCommand 1 (Steer N)]

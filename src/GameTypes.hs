@@ -25,9 +25,11 @@ type Trail = [Coordinate]
 
 data Command = MoveCommand Player Move
              | Quit Player
+    deriving (Show, Eq)
 -- a move of a unPlayer on the grid
 data Move = Steer Course
           | Straight
+    deriving (Show, Eq)
 
 data Grid = Grid {
     unGridSize :: GridSize

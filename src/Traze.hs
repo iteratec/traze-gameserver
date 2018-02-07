@@ -7,6 +7,8 @@ import Tuple
 import Data.Either (lefts, rights)
 import Data.List (find)
 
+import GHC.Exts (groupWith, sortWith)
+
 -- | The 'play' function plays one round. It takes a list of 
 -- Commands and generates the next game state as well as 
 play :: Grid           -- ^ The current game state
@@ -15,7 +17,8 @@ play :: Grid           -- ^ The current game state
 play g cs = ((Grid (unGridSize g) bikes' queue'), deaths)
     where bikes' = rights $ executedCommands
           deaths = lefts $ executedCommands
-          executedCommands = map (execCommand g) $ map (addStraightCommands cs) ((unBikes g) ++ joinedBikes)
+          executedCommands = map (execCommand g) $ 
+              map (addStraightCommands cs) ((unBikes g) ++ joinedBikes)
           (popedQueue, joinedBikes) = popFromQueue (unQueue g) cs
           queue' = ageQueue popedQueue
 
@@ -41,11 +44,17 @@ getCommandPlayer :: Command -> Player
 getCommandPlayer (MoveCommand p _) = p
 getCommandPlayer (Quit p) = p
 
+removeDuplicateCommands :: [Command] -> [Command]
+removeDuplicateCommands = removeDuplicates (getCommandPlayer)
+
+removeDuplicates :: Ord b => (a -> b) -> [a] -> [a]
+removeDuplicates f = map (foldr1 (\_ a -> a)) . (groupWith f) . (sortWith f)
+
 execCommand :: Grid -> Command -> Either Death Bike
 execCommand _ (Quit p) = Left $ Suicide p
 execCommand g (MoveCommand p m) = case (getBikeForPlayer g p) of
-    (Just b) -> drive g b m
-    (Nothing)  -> Left $ Suicide p
+    (Just b)  -> drive g b m
+    (Nothing) -> Left $ Suicide p
 
 getBikeForPlayer :: Grid -> Player -> Maybe Bike
 getBikeForPlayer (Grid _ bs q) p =
@@ -54,7 +63,7 @@ getBikeForPlayer (Grid _ bs q) p =
 
 drive :: Grid -> Bike -> Move -> Either Death Bike
 drive g b m = case death of
-    Just d -> Left d
+    Just d  -> Left d
     Nothing -> Right $ driveBike b m
 
     where newCord = stepCoordinate unCourse' (unCurrentLocation b)
@@ -99,10 +108,10 @@ getFrag (Grid _ bikes _) b m = case fragger of
               else Frag p killer
 
 getFirstJust :: [Maybe a] -> Maybe a
-getFirstJust [] = Nothing
-getFirstJust [x] = x
+getFirstJust []           = Nothing
+getFirstJust [x]          = x
 getFirstJust ((Just x):_) = Just x
-getFirstJust (_:xs) = getFirstJust xs
+getFirstJust (_:xs)       = getFirstJust xs
 
 -- execute a single move
 driveBike :: Bike -> Move -> Bike
@@ -111,8 +120,8 @@ driveBike b m = Bike (unPlayer b) (newCourse (unCourse b) m) newLocation newTrai
           newTrail = (unCurrentLocation b) : (unTrail b)
 
 newCourse :: Course -> Move -> Course
-newCourse c Straight   = c
-newCourse _ (Steer t)  = t
+newCourse c Straight  = c
+newCourse _ (Steer t) = t
 
 stepCoordinate :: Course -> Coordinate -> Coordinate
 stepCoordinate N = tupleApply (id        , (+1)      )
