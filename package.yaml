@@ -39,6 +39,7 @@ executables:
     - monad-loops >= 0.4.3
     - ansi-terminal >= 0.5
     - async >= 2.0.1.5
+    - stm >= 2.4.5 && <= 2.5
 
 tests:
   traze-test:
