@@ -112,11 +112,23 @@ This section aims to help you getting started to contribute to the traze game se
 ### Technology stack
 This software is written in `Haskell`, a purely functional programming language. It uses the `stack` build tool for compilation. 
 
-If you just want to run the game server locally without setting up a Haskell development environment you can do so by using Docker. You can either pull the image from the registry or build it yourself using `docker build` in the project root directory.
+If you just want to run the game server locally without setting up a Haskell development environment you can do so by using Docker. You can either pull the image from the registry or build it yourself in the project root directory.
+```
+docker build
+```
 
 If you want to make changes to the source code you will want to build the software outside of docker. For that you just need to install the stack tool. It will download a fitting compiler environment for you.
+For MQTT connectivity we use language bindings to libmosquitto, an MQTT client library written in C. That is because the available native MQTT libraries in haskell come without TLS/SSL support at this point. You will need to install the library locally in order to be able to link the game server against it.
+On Debian:
+```
+sudo apt-get install libmosquitto-dev
+```
+on Fedora:
+```
+sudo dnf install mosquitto-devel
+```
 
-Once you have installed stack you can build the binaries by issuing the following command from the project root directory.
+Once you have installed stack and the required low level binaries, you can build the binaries by issuing the following command from the project root directory.
 
 ```
 stack build

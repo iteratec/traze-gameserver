@@ -40,6 +40,7 @@ executables:
     - ansi-terminal >= 0.5
     - async >= 2.0.1.5
     - stm >= 2.4.5 && <= 2.5
+    - c-mosquitto >= 0.1.2 && <= 0.2
 
 tests:
   traze-test:
