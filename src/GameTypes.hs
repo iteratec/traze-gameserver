@@ -12,19 +12,19 @@ data Course = N | E | W | S
     deriving (Show, Eq)
 
 -- the unPlayers id number
-type Player = Int
+type PlayerId = Int
 
 data Bike = Bike {
-    unPlayer :: Player,
+    unPlayerId :: PlayerId,
     unCourse :: Course,
     unCurrentLocation :: Coordinate,
-    unTrail :: [Coordinate]
+    unTrail :: Trail
 } deriving (Show, Eq)
 
 type Trail = [Coordinate]
 
-data Command = MoveCommand Player Move
-             | Quit Player
+data Command = MoveCommand PlayerId Move
+             | Quit PlayerId
     deriving (Show, Eq)
 -- a move of a unPlayer on the grid
 data Move = Steer Course
@@ -40,10 +40,10 @@ data Grid = Grid {
 -- ticks to start playing
 type TimeToLive = Int
 
-data Death = Suicide Player
+data Death = Suicide PlayerId
            --     Killer  Casulty
-           | Frag Player  Player
-           | Collision Player Player
+           | Frag PlayerId  PlayerId
+           | Collision PlayerId PlayerId
     deriving (Show, Eq)
 
 

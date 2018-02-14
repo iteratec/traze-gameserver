@@ -1,4 +1,4 @@
-import Traze
+import GameLogic
 import SpawnQueue
 import GameTypes
 import SpawnPlayer

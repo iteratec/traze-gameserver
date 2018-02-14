@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1d86e8d7a4b12559e9b31ce337f50401e568ffe9fcd704f3f50eed8417905d55
+-- hash: eb67030accc9da3490beedc305f32c970c76b61cd0249c1c79010cb902d10ea5
 
 name:           traze
 version:        0.1.0.0
@@ -34,10 +34,10 @@ library
       base >=4.7 && <5
     , text >=1.2 && <2
   exposed-modules:
+      GameLogic
       GameTypes
       SpawnPlayer
       SpawnQueue
-      Traze
       Tuple
   other-modules:
       Paths_traze
@@ -52,11 +52,16 @@ executable traze-exe
       ansi-terminal >=0.5
     , async >=2.0.1.5
     , base >=4.7 && <5
+    , bytestring >=0.10 && <0.11
+    , c-mosquitto >=0.1.2 && <=0.2
     , monad-loops >=0.4.3
     , stm >=2.4.5 && <=2.5
     , text >=1.2 && <2
     , traze
+    , uuid >=1.3 && <1.4
   other-modules:
+      Instance
+      Mqtt
       Output
       Paths_traze
   default-language: Haskell2010

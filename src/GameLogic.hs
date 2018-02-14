@@ -1,4 +1,4 @@
-module Traze where
+module GameLogic where
 
 import GameTypes
 import SpawnQueue
@@ -26,40 +26,40 @@ play g cs = ((Grid (unGridSize g) bikes' queue'), deaths)
 popFromQueue :: [QueueItem Bike] -> [Command] -> ([QueueItem Bike], [Bike])
 popFromQueue qs cs = (queue', bikes)
     where bikes = filter (hasCommand cs) (map unQueueItem qs)
-          queue' = filter (not . (findPlayerInQueue bikes)) qs
+          queue' = filter (not . (findPlayerIdInQueue bikes)) qs
           hasCommand :: [Command] -> Bike -> Bool
-          hasCommand coms b = (unPlayer b) `elem` (map getCommandPlayer coms)
-          findPlayerInQueue :: [Bike] -> QueueItem Bike -> Bool
-          findPlayerInQueue bs item = (unPlayer (unQueueItem item)) `elem` (map unPlayer bs)
+          hasCommand coms b = (unPlayerId b) `elem` (map getCommandPlayerId coms)
+          findPlayerIdInQueue :: [Bike] -> QueueItem Bike -> Bool
+          findPlayerIdInQueue bs item = (unPlayerId (unQueueItem item)) `elem` (map unPlayerId bs)
 
 -- make sure all bikes on the grid go straight if no command given
 addStraightCommands :: [Command] -> Bike -> Command
 addStraightCommands cs b = case command of
-    Nothing -> MoveCommand (unPlayer b) Straight
+    Nothing -> MoveCommand (unPlayerId b) Straight
     Just c  -> c
     where command :: Maybe Command
-          command = find (\c -> getCommandPlayer c == (unPlayer b)) cs
+          command = find (\c -> getCommandPlayerId c == (unPlayerId b)) cs
 
-getCommandPlayer :: Command -> Player
-getCommandPlayer (MoveCommand p _) = p
-getCommandPlayer (Quit p) = p
+getCommandPlayerId :: Command -> PlayerId
+getCommandPlayerId (MoveCommand p _) = p
+getCommandPlayerId (Quit p) = p
 
 removeDuplicateCommands :: [Command] -> [Command]
-removeDuplicateCommands = removeDuplicates (getCommandPlayer)
+removeDuplicateCommands = removeDuplicates (getCommandPlayerId)
 
 removeDuplicates :: Ord b => (a -> b) -> [a] -> [a]
 removeDuplicates f = map (foldr1 (\_ a -> a)) . (groupWith f) . (sortWith f)
 
 execCommand :: Grid -> Command -> Either Death Bike
 execCommand _ (Quit p) = Left $ Suicide p
-execCommand g (MoveCommand p m) = case (getBikeForPlayer g p) of
+execCommand g (MoveCommand p m) = case (getBikeForPlayerId g p) of
     (Just b)  -> drive g b m
     (Nothing) -> Left $ Suicide p
 
-getBikeForPlayer :: Grid -> Player -> Maybe Bike
-getBikeForPlayer (Grid _ bs q) p =
+getBikeForPlayerId :: Grid -> PlayerId -> Maybe Bike
+getBikeForPlayerId (Grid _ bs q) p =
     let allBikes = bs ++ (map unQueueItem q) in
-        (find (\a -> p == unPlayer a) allBikes)
+        (find (\a -> p == unPlayerId a) allBikes)
 
 drive :: Grid -> Bike -> Move -> Either Death Bike
 drive g b m = case death of
@@ -74,7 +74,7 @@ drive g b m = case death of
           -- get death if out of grid
           getWallKiss :: GridSize -> Maybe Death
           getWallKiss gridSize = if (isOutOfBounds newCord gridSize)
-              then Just (Suicide (unPlayer b))
+              then Just (Suicide (unPlayerId b))
               else Nothing
 
 isOutOfBounds :: Coordinate -> Coordinate -> Bool
@@ -89,7 +89,7 @@ isOutOfBounds (x1,y1) (x2, y2)
 getFrag :: Grid -> Bike -> Move -> Maybe Death
 getFrag (Grid _ bikes _) b m = case fragger of
     Nothing -> Nothing
-    Just f -> Just $ getDeath (unPlayer f) (unPlayer b)
+    Just f -> Just $ getDeath (unPlayerId f) (unPlayerId b)
 
     where fragger :: Maybe Bike
           fragger = getFirstJust $ fmap (droveInTrail $ newCord) bikes
@@ -102,7 +102,7 @@ getFrag (Grid _ bikes _) b m = case fragger of
               then Just bike
               else Nothing
 
-          getDeath :: Player -> Player -> Death
+          getDeath :: PlayerId -> PlayerId -> Death
           getDeath p killer = if p == killer
               then Suicide p
               else Frag p killer
@@ -115,7 +115,7 @@ getFirstJust (_:xs)       = getFirstJust xs
 
 -- execute a single move
 driveBike :: Bike -> Move -> Bike
-driveBike b m = Bike (unPlayer b) (newCourse (unCourse b) m) newLocation newTrail
+driveBike b m = Bike (unPlayerId b) (newCourse (unCourse b) m) newLocation newTrail
     where newLocation = stepCoordinate (newCourse (unCourse b) m) (unCurrentLocation b)
           newTrail = (unCurrentLocation b) : (unTrail b)
 

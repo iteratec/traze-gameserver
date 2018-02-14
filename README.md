@@ -58,6 +58,16 @@ currentPlayers: [
 ]
 ```
 
+Finally there is a ticker topic that informs about frags that occoured on a given instance.
+`traze/{instanceName}/ticker`
+```
+frag: {
+  type: "frag",
+  casulty: "2",
+  fragger: "4"
+}
+```
+
 #### Web UI
 You can stream the UI onto your own web enabled device.
 

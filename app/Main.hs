@@ -1,9 +1,9 @@
 module Main where
 
 import GameTypes
+import GameLogic
 import Output
 import SpawnPlayer
-import Traze
 
 import System.IO
 import System.Console.ANSI
