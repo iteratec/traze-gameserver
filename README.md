@@ -127,7 +127,18 @@ If you just want to run the game server locally without setting up a Haskell dev
 docker build
 ```
 
-If you want to make changes to the source code you will want to build the software outside of docker. For that you just need to install the stack tool. It will download a fitting compiler environment for you.
+#### Docker Dev Setup
+If you want to make changes to the source code you will want to build the software. For easy usage we have provided the `Dockerfile.dev` and the helper script `run-docker-dev.sh`. To get started just run
+```
+./run-docker-dev.sh
+```
+This will setup a Docker container with all build tools ready to use and the sources mounted as a volume. You will end up within a bash session inside the working directory. For more options try
+```
+./run-docker-dev.sh --help
+```
+
+#### Local Dev Setup
+If you don't like docker you can run the dev tools on your host machine. For that you just need to install the stack tool. It will download a fitting compiler environment for you.
 For MQTT connectivity we use language bindings to libmosquitto, an MQTT client library written in C. That is because the available native MQTT libraries in haskell come without TLS/SSL support at this point. You will need to install the library locally in order to be able to link the game server against it.
 On Debian:
 ```

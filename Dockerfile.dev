@@ -1,0 +1,30 @@
+FROM blitznote/debootstrap-amd64:16.04 as builder
+
+
+ARG APP_USER="dev"
+ARG APP_USER_ID=1000
+ARG APP_USER_GROUP="dev"
+ARG APP_USER_GROUP_ID=1000
+
+
+RUN apt-get update && \ 
+    apt-get install -y libmosquitto-dev && \
+    curl -sSL https://get.haskellstack.org/ | sh
+
+
+
+#####  User Management - Non-Root User  #####
+
+RUN groupadd --gid ${APP_USER_GROUP_ID} ${APP_USER_GROUP}
+RUN useradd --create-home --uid ${APP_USER_ID} --gid=${APP_USER_GROUP_ID} ${APP_USER}
+
+USER ${APP_USER}
+
+# Create the Stack cacheing folder, so there will be no permission issues
+RUN mkdir -p /home/${APP_USER}/.stack
+
+
+VOLUME "/usr/src/traze"
+WORKDIR "/usr/src/traze"
+
+ENTRYPOINT ["/bin/bash"]
