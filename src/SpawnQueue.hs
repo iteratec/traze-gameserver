@@ -27,3 +27,8 @@ ageQueue qs = filter (not . (<=0) . retrieveQueueTtl) $ map decTtl qs
 decTtl :: QueueItem a -> QueueItem a
 decTtl (QueueItem t a) = QueueItem (t-1) a
 
+getFirstJust :: [Maybe a] -> Maybe a
+getFirstJust []           = Nothing
+getFirstJust [x]          = x
+getFirstJust ((Just x):_) = Just x
+getFirstJust (_:xs)       = getFirstJust xs

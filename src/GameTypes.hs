@@ -1,6 +1,9 @@
+{-# LANGUAGE DeriveGeneric #-}
 module GameTypes where
 
 import SpawnQueue
+import GHC.Generics
+import Data.Aeson
 
 -- A coordinate on the grid
 type Coordinate = (Int, Int)
@@ -9,7 +12,11 @@ type Coordinate = (Int, Int)
 type GridSize = (Int, Int)
 
 data Course = N | E | W | S
-    deriving (Show, Eq)
+    deriving (Generic, Show, Eq)
+
+instance ToJSON Course where
+    toEncoding = genericToEncoding defaultOptions
+instance FromJSON Course
 
 -- the unPlayers id number
 type PlayerId = Int

@@ -26,16 +26,26 @@ If you want to write an ai pilot you can do so by parsing the MQTT repersentatio
 
 `traze/{instanceName}/grid`
 ```json
-grid: {
-    height: 3,
-    width: 3,
-    tiles:[
+{
+  "height":3,
+  "width":3,
+  "tiles":[
         [ 1, 0, 0 ],
         [ 1, 1, 2 ],
         [ 0, 2, 2 ]
-    ]
+    ],
+  "bikes":[
+      {
+        "playerId":2,
+        "currentLocation":[1,0],
+        "direction":"E",
+        "trail":[[2,0],[2,1]]
+        }
+   ]
 }
 ```
+
+
 In addition to the grid you might receive a list of currently active players.
 
 `traze/{instanceName}/players`
@@ -63,8 +73,8 @@ Finally there is a ticker topic that informs about frags that occoured on a give
 ```
 frag: {
   type: "frag",
-  casulty: "2",
-  fragger: "4"
+  casulty: 2,
+  fragger: 4
 }
 ```
 

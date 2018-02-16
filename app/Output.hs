@@ -1,10 +1,58 @@
+{-# LANGUAGE DeriveGeneric #-}
 module Output where
 
 import GameTypes
 import SpawnQueue
+
 import Data.Maybe
 import Control.Monad
 import Data.List
+import Data.Aeson
+
+import GHC.Generics
+
+data GameState = GameState {
+    height :: Int,
+    width :: Int,
+    tiles :: [[Int]],
+    bikes :: [OutputBike]
+} deriving (Generic, Show, Eq)
+
+instance ToJSON GameState where
+    toEncoding = genericToEncoding defaultOptions
+instance FromJSON GameState
+
+data OutputBike = OutputBike {
+    playerId :: Int,
+    currentLocation :: Coordinate,
+    direction :: Course,
+    trail :: [Coordinate]
+} deriving (Generic, Show, Eq)
+
+instance ToJSON OutputBike where
+    toEncoding = genericToEncoding defaultOptions
+instance FromJSON OutputBike
+
+gridToGameState :: Grid -> GameState
+gridToGameState g =
+    GameState maxY maxX (getTiles g) (map getOutputBike gridBikes)
+    where (Grid (maxX, maxY) gridBikes _) = g
+
+getTiles :: Grid -> [[Int]]
+getTiles g = (map . map) (getPosPlayerId gridBikes) (getGridCoords gs)
+    where (Grid gs gridBikes _) = g
+
+getPosPlayerId :: [Bike] -> Coordinate -> PlayerId
+getPosPlayerId bs c = fromMaybe 0 $ getFirstJust $ map (getPid c) bs
+
+getPid :: Coordinate -> Bike -> Maybe PlayerId
+getPid c b
+    | c `elem` (unTrail b) = Just (unPlayerId b)
+    | otherwise = Nothing
+
+getOutputBike :: Bike -> OutputBike
+getOutputBike (Bike pid c loc tr) =
+    OutputBike pid loc c tr
 
 printGrid :: Grid -> IO ()
 printGrid = mapM_ putStrLn . gridToLineStrings

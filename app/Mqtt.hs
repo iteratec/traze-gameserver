@@ -12,8 +12,10 @@ import Control.Concurrent.STM.TQueue
 
 import Control.Monad 
 import Control.Monad.STM 
+import Data.Aeson
 
 import Data.ByteString.Char8 (pack)
+import Data.ByteString.Lazy (toStrict)
 
 import qualified Network.Mosquitto as M
 
@@ -23,26 +25,31 @@ data MqttMessage = MqttMessage String BS.ByteString
 mqttThread :: TQueue (String, BS.ByteString) -> Config -> IO ()
 mqttThread queue config = M.withMosquittoLibrary $ do
     m <- M.newMosquitto True (clientName config) (Just ())
+    M.setTls m "" "" ""
     M.setTlsInsecure m True
     _ <- M.setReconnectDelay m True 2 30
     M.onMessage m print
     M.onLog m $ const putStrLn
-    _ <- M.onConnect m $ \c -> do
+    M.onConnect m $ \c -> do
+        putStrLn "connected to broker"
         print c
+        M.subscribe m 0 "#"
 
     M.onDisconnect m print
     M.onSubscribe m $ curry print
-    _ <- M.connect m (brokerHost config) (brokerPort config) 1200
+    M.connect m (brokerHost config) (brokerPort config) 1200
 
     _ <- forkIO $ forever $ do
         (topic, message) <- atomically $ readTQueue queue
         M.publish m False 0 topic message
+    M.loopForever m
+    M.destroyMosquitto m
     return ()
 
 castGridThread :: TQueue Grid -> TQueue (String, BS.ByteString) -> STM ()
 castGridThread input output = do
     grid <- readTQueue input 
-    let message = (\g -> ("/traze/1/grid", pack $ gridToString g)) grid
+    let message = (\g -> ("traze/1/grid", toStrict $ encode $ gridToGameState g)) grid
     writeTQueue output message
 
 castTickerThread :: TQueue Death -> IO ()

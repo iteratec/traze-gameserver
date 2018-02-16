@@ -107,11 +107,6 @@ getFrag (Grid _ bikes _) b m = case fragger of
               then Suicide p
               else Frag p killer
 
-getFirstJust :: [Maybe a] -> Maybe a
-getFirstJust []           = Nothing
-getFirstJust [x]          = x
-getFirstJust ((Just x):_) = Just x
-getFirstJust (_:xs)       = getFirstJust xs
 
 -- execute a single move
 driveBike :: Bike -> Move -> Bike
