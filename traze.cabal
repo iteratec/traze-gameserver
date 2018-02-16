@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e3e5c2ee52b8d34a43ee6ca4db3535629d27b5931d8d0bd50fc428c72f6ab97f
+-- hash: a5f455514d451ae5e47694cc890fdd035343be84aaeddada8e888204f3fcf973
 
 name:           traze
 version:        0.1.0.0
@@ -57,6 +57,7 @@ executable traze-exe
     , bytestring >=0.10 && <0.11
     , c-mosquitto >=0.1.2 && <=0.2
     , monad-loops >=0.4.3
+    , split >=0.2.3 && <0.3
     , stm >=2.4.5 && <=2.5
     , text >=1.2 && <2
     , traze

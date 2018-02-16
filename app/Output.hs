@@ -33,6 +33,15 @@ instance ToJSON OutputBike where
     toEncoding = genericToEncoding defaultOptions
 instance FromJSON OutputBike
 
+data SteerInput = SteerInput {
+    course :: Course,
+    playerToken :: String
+} deriving (Generic, Show, Eq)
+
+instance ToJSON SteerInput where
+    toEncoding = genericToEncoding defaultOptions
+instance FromJSON SteerInput
+
 gridToGameState :: Grid -> GameState
 gridToGameState g =
     GameState maxY maxX (getTiles g) (map getOutputBike gridBikes)

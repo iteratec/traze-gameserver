@@ -35,9 +35,9 @@ runGrid grid = do
     config <- getConfig
 
     mqttQueue <- atomically $ newTQueue
-    _ <- forkIO $ mqttThread mqttQueue config
-
     inputQueue <- atomically $ newTQueue
+    _ <- forkIO $ mqttThread mqttQueue inputQueue config
+
     _ <- forkIO $ forever $ inputThread inputQueue
 
     gridQueue <- atomically $ newTQueue

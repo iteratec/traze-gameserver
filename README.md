@@ -12,8 +12,8 @@ You can query currently running Games.
 ```json
 [
     {
-        name: "instanceName",
-        activePlayers: 5
+        "name": "instanceName",
+        "activePlayers": 5
     }
 ]
 
@@ -52,29 +52,29 @@ In addition to the grid you might receive a list of currently active players.
 ```json
 currentPlayers: [
    {
-     id: 1,
-     name: "player1",
-     color: "#28BA3C",
-     frags: 1,
-     owned: 2
+     "id": 1,
+     "name": "player1",
+     "color": "#28BA3C",
+     "frags": 1,
+     "owned": 2
    },
    {
-     id: 2,
-     name: "player2",
-     color: "#0A94FF",
-     frags: 2,
-     owned: 1
+     "id": 2,
+     "name": "player2",
+     "color": "#0A94FF",
+     "frags": 2,
+     "owned": 1
    }
 ]
 ```
 
 Finally there is a ticker topic that informs about frags that occoured on a given instance.
 `traze/{instanceName}/ticker`
-```
+```json
 frag: {
-  type: "frag",
-  casulty: 2,
-  fragger: 4
+  "type": "frag",
+  "casulty": 2,
+  "fragger": 4
 }
 ```
 
@@ -90,18 +90,18 @@ You send a request to join the game. In return you'll get a user token that allo
 
 `/traze/{instanceName}/join`
 ```json
-name: "yourFancyPublicUserHandle"
+"name": "yourFancyPublicUserHandle"
 ```
 
 If the server accepts your request you'll receive a message communicating your initial position. Once you give your first direction command your game starts.
 
 `traze/{instanceName}/player/{playerName}`
 ```json
-you: {
-    id: 1337,
-    name: "yourFancyPublicUserHandle",
-    secretUserToken:"",
-    position: (15,3)
+{
+    "id": 1337,
+    "name": "yourFancyPublicUserHandle",
+    "secretUserToken":"",
+    "position": (15,3)
 }
 ```
 
@@ -111,8 +111,8 @@ You steer by giving the directions for your next turn via an MQTT message. If yo
 `traze/{instanceName}/{playerId}/steer`
 ```json
 {
-    course:"North",
-    playerToken: "yourSecretToken"
+    "course":"N",
+    "playerToken": "yourSecretToken"
 }
 ```
 
@@ -123,7 +123,7 @@ You may leave the game at any time.
 
 `traze/{instanceName}/{playerId}/bail`
 ```json
-playerToken: "yourSecretToken"
+"playerToken": "yourSecretToken"
 ```
 
 ## Development
