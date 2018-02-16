@@ -4,7 +4,7 @@
 # --- MQTT Configuration ---
 
 mqtt:
-    brokerHost: "mqtt"
-    brokerPort: "8080"
+    brokerHost: "localhost"
+    brokerPort: "1883"
     clientName: "traze-server"
 

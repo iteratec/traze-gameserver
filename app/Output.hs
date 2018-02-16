@@ -7,7 +7,10 @@ import Control.Monad
 import Data.List
 
 printGrid :: Grid -> IO ()
-printGrid g = mapM_ putStrLn $ gridToLineStrings g
+printGrid = mapM_ putStrLn . gridToLineStrings
+
+gridToString :: Grid -> String
+gridToString = intercalate "\n" . gridToLineStrings
 
 gridToLineStrings :: Grid -> [String]
 gridToLineStrings g = (map . map) (getPosChar g) $ getGridCoords $ unGridSize g 

@@ -4,6 +4,8 @@ import GameTypes
 import GameLogic
 import Output
 import SpawnPlayer
+import Mqtt
+import Config
 
 import System.IO
 import System.Console.ANSI
@@ -29,11 +31,17 @@ sampleLength = oneSecond `div` 4
 
 runGrid :: Grid -> IO ()
 runGrid grid = do
+
+    config <- getConfig
+
+    mqttQueue <- atomically $ newTQueue
+    _ <- forkIO $ mqttThread mqttQueue config
+
     inputQueue <- atomically $ newTQueue
     _ <- forkIO $ forever $ inputThread inputQueue
 
     gridQueue <- atomically $ newTQueue
-    _ <- forkIO $ displayThread gridQueue
+    _ <- forkIO $ forever $ atomically $ castGridThread gridQueue mqttQueue
 
     gameProcess <- async $ gameThread grid gridQueue inputQueue
     wait gameProcess
