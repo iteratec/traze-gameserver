@@ -50,7 +50,7 @@ In addition to the grid you might receive a list of currently active players.
 
 `traze/{instanceName}/players`
 ```json
-currentPlayers: [
+[
    {
      "id": 1,
      "name": "player1",
@@ -71,7 +71,7 @@ currentPlayers: [
 Finally there is a ticker topic that informs about frags that occoured on a given instance.
 `traze/{instanceName}/ticker`
 ```json
-frag: {
+{
   "type": "frag",
   "casulty": 2,
   "fragger": 4
@@ -101,7 +101,7 @@ If the server accepts your request you'll receive a message communicating your i
     "id": 1337,
     "name": "yourFancyPublicUserHandle",
     "secretUserToken":"",
-    "position": (15,3)
+    "position": [15,3]
 }
 ```
 
