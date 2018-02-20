@@ -5,6 +5,7 @@ RUN apt-get update && \
     curl -sSL https://get.haskellstack.org/ | sh
 ADD . /usr/src/traze/
 RUN cd /usr/src/traze && \
+    stack test && \
     stack build --copy-bins
 
 FROM ubuntu:16.04

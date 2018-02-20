@@ -22,6 +22,11 @@ import Network.Mosquitto.Internal.Types
 
 data MqttMessage = MqttMessage String BS.ByteString
 
+data MessageType 
+    = Steering InstanceName PlayerId
+    | Bail InstanceName PlayerId
+    | Join InstanceName
+
 -- | publish 
 mqttThread :: TQueue (String, BS.ByteString) -> TQueue Command -> Config -> IO ()
 mqttThread gridQueue commandQueue config = M.withMosquittoLibrary $ do
@@ -35,6 +40,7 @@ mqttThread gridQueue commandQueue config = M.withMosquittoLibrary $ do
         putStrLn "connected to broker"
         print c
         M.subscribe m 0 "traze/+/+/steer"
+        M.subscribe m 0 "traze/+/+/bail"
 
     M.onDisconnect m print
     M.onSubscribe m $ curry print
@@ -43,6 +49,7 @@ mqttThread gridQueue commandQueue config = M.withMosquittoLibrary $ do
     _ <- forkIO $ forever $ do
         (top, message) <- atomically $ readTQueue gridQueue
         M.publish m False 0 top message
+
     M.loopForever m
     M.destroyMosquitto m
     return ()
@@ -54,17 +61,31 @@ castGridThread input output = do
     writeTQueue output message
 
 handleMessage :: TQueue Command -> Message -> STM ()
-handleMessage queue (Message _ top payl _ _) = case (parseTopic top, parseSteerInput payl) of
-    (Just pid, Just stin) -> writeTQueue queue (MoveCommand pid (Steer $ course stin))
-    (_, _) -> return ()
+handleMessage queue (Message _ top payl _ _) = case parseTopic top of
+    (Just (Steering _ pid)) -> writeSteerCommand queue pid $ parseSteerInput payl
+    (Just (Bail _ pid)) -> writeBailCommand queue pid $ parseBailInput payl
+    _ -> return ()
+
+writeSteerCommand :: TQueue Command -> PlayerId -> Maybe SteerInput -> STM ()
+writeSteerCommand _ _ Nothing = return ()
+writeSteerCommand queue pid (Just stin) = writeTQueue queue (MoveCommand pid (Steer $ stInCourse stin))
+
+writeBailCommand :: TQueue Command -> PlayerId -> Maybe BailInput -> STM ()
+writeBailCommand _ _ Nothing = return ()
+writeBailCommand queue pid (Just _) = writeTQueue queue (Quit pid)
     
-parseTopic :: String -> Maybe PlayerId
+parseTopic :: String -> Maybe MessageType
 parseTopic top = case (splitOn "/" top) of
-     ("traze" : _ : pid : "steer" : []) -> Just (read pid)
+     ("traze" : instName : pid : "steer" : []) -> Just $ Steering instName (read pid)
+     ("traze" : instName : pid : "bail"  : []) -> Just $ Bail instName (read pid)
+     ("traze" : instName : "join" : []) -> Just $ Join instName
      _ -> Nothing
 
 parseSteerInput :: BS.ByteString -> Maybe SteerInput
 parseSteerInput bs = decode $ fromStrict bs
+
+parseBailInput :: BS.ByteString -> Maybe BailInput
+parseBailInput bs = decode $ fromStrict bs
 
 castTickerThread :: TQueue Death -> IO ()
 castTickerThread = undefined

@@ -4,6 +4,7 @@ import GameTypes
 import Data.UUID
 
 type Session = UUID
+type InstanceName = String
 
 data Instance = Instance {
   unGrid :: Grid,
@@ -19,3 +20,4 @@ data Player = Player {
   unColor :: String,
   unSession :: Session
 }
+

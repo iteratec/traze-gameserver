@@ -34,13 +34,24 @@ instance ToJSON OutputBike where
 instance FromJSON OutputBike
 
 data SteerInput = SteerInput {
-    course :: Course,
-    playerToken :: String
+    stInCourse :: Course,
+    stInPlayerToken :: String
 } deriving (Generic, Show, Eq)
 
 instance ToJSON SteerInput where
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = drop 4 }
+instance FromJSON SteerInput where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = drop 4}
+
+data BailInput = BailInput {
+    playerToken :: String
+} deriving (Generic, Show, Eq)
+
+instance ToJSON BailInput where
     toEncoding = genericToEncoding defaultOptions
-instance FromJSON SteerInput
+instance FromJSON BailInput
 
 gridToGameState :: Grid -> GameState
 gridToGameState g =
