@@ -1,13 +1,13 @@
-FROM blitznote/debootstrap-amd64:16.04 as builder
+FROM ubuntu:16.04 as builder
 
 RUN apt-get update && \ 
-    apt-get install -y libmosquitto-dev && \
+    apt-get install -y libmosquitto-dev curl && \
     curl -sSL https://get.haskellstack.org/ | sh
 ADD . /usr/src/traze/
 RUN cd /usr/src/traze && \
     stack build --copy-bins
 
-FROM blitznote/debootstrap-amd64:16.04
+FROM ubuntu:16.04
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libmosquitto.so /usr/lib/x86_64-linux-gnu/libmosquitto.so
 COPY --from=builder /usr/include/mosquitto.h /usr/include/mosquitto.h
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libmosquitto.so.1 /usr/lib/x86_64-linux-gnu/libmosquitto.so.1

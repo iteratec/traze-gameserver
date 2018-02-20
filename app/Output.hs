@@ -88,13 +88,13 @@ getFrameChar (maxX, maxY) (x, y)
     where isOut a bound = a >= bound || a < 0
 
 getPosChar :: Grid -> Coordinate -> Char
-getPosChar (Grid gs bikes queue) c =
-    fromMaybe ' ' $ msum $ (getFrameChar gs c) : (map (getBikePosChar c) $ bikes ++ (map unQueueItem queue))
+getPosChar (Grid gs bs queue) c =
+    fromMaybe ' ' $ msum $ (getFrameChar gs c) : (map (getBikePosChar c) $ bs ++ (map unQueueItem queue))
 
 getBikePosChar :: Coordinate -> Bike -> Maybe Char
-getBikePosChar c (Bike _ _ curr trail)
+getBikePosChar c (Bike _ _ curr tr)
     | curr == c = Just 'o'
     | otherwise =
-        case find (c==) (trail) of
+        case find (c==) (tr) of
             Just _ -> Just 'X'
             Nothing -> Nothing

@@ -15,7 +15,6 @@ import Control.Monad.STM
 import Data.Aeson
 import Data.List.Split
 
-import Data.ByteString.Char8 (pack)
 import Data.ByteString.Lazy (toStrict, fromStrict)
 
 import qualified Network.Mosquitto as M
@@ -39,11 +38,11 @@ mqttThread gridQueue commandQueue config = M.withMosquittoLibrary $ do
 
     M.onDisconnect m print
     M.onSubscribe m $ curry print
-    M.connect m (brokerHost config) (brokerPort config) 1200
+    _ <- M.connect m (brokerHost config) (brokerPort config) 1200
 
     _ <- forkIO $ forever $ do
-        (topic, message) <- atomically $ readTQueue gridQueue
-        M.publish m False 0 topic message
+        (top, message) <- atomically $ readTQueue gridQueue
+        M.publish m False 0 top message
     M.loopForever m
     M.destroyMosquitto m
     return ()
@@ -56,12 +55,12 @@ castGridThread input output = do
 
 handleMessage :: TQueue Command -> Message -> STM ()
 handleMessage queue (Message _ top payl _ _) = case (parseTopic top, parseSteerInput payl) of
-    (Just id, Just stin) -> writeTQueue queue (MoveCommand id (Steer $ course stin))
+    (Just pid, Just stin) -> writeTQueue queue (MoveCommand pid (Steer $ course stin))
     (_, _) -> return ()
     
 parseTopic :: String -> Maybe PlayerId
 parseTopic top = case (splitOn "/" top) of
-     ("traze" : _ : id : "steer" : []) -> Just (read id)
+     ("traze" : _ : pid : "steer" : []) -> Just (read pid)
      _ -> Nothing
 
 parseSteerInput :: BS.ByteString -> Maybe SteerInput
