@@ -13,7 +13,7 @@ data Config = Config {
 
 getConfig :: IO (Config)
 getConfig = do
-    config <- load "./traze.yaml"
+    config <- load "./traze.yml"
 
     mqttConfig <- subconfig "mqtt" config
     host <- lookup "brokerHost" mqttConfig

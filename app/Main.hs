@@ -4,6 +4,7 @@ import GameTypes
 import GameLogic
 import Output
 import SpawnPlayer
+import SpawnQueue
 import Mqtt
 import Config
 
@@ -17,6 +18,7 @@ import Control.Concurrent.STM.TQueue
 import Control.Monad
 import Control.Monad.STM
 import Control.Monad.Loops
+import Debug.Trace
 
 main :: IO ()
 main = clearScreen
@@ -76,16 +78,22 @@ inputThread queue = do
 
 gameThread :: Grid -> TQueue Grid -> TQueue Command -> IO ()
 gameThread grid gq cq = do
-    _ <- iterateUntilM gameOver (gameSTM gq cq) grid
+    _ <- iterateUntilM (\_->False) (gameSTM gq cq) grid
     return ()
 
 gameSTM :: TQueue Grid -> TQueue Command -> Grid -> IO (Grid)
 gameSTM gridQueue commandQueue grid = do
-    threadDelay sampleLength
+    threadDelay (trace "tick" sampleLength)
     commands <- atomically $ liftM removeDuplicateCommands $ flushTQueue commandQueue
     let (grid', _) = play grid commands
-    atomically $ writeTQueue gridQueue grid'
-    return grid'
+    let grid'' = respawnPlayerIfNeeded grid'
+    atomically $ writeTQueue gridQueue (trace (show grid'') grid'')
+    return grid''
+
+respawnPlayerIfNeeded :: Grid -> Grid
+respawnPlayerIfNeeded grid@(Grid _ bs queue)
+    | (length (bs ++ (map unQueueItem queue))) < 2  = fst $ spawnPlayer grid 
+    | otherwise = grid
 
 displayThread :: TQueue Grid -> IO ()
 displayThread gridQueue = forever $ do
@@ -96,10 +104,6 @@ getInput :: IO Char
 getInput = hSetEcho stdin False
     >> hSetBuffering stdin NoBuffering
     >> getChar
-
-gameOver :: Grid -> Bool
-gameOver (Grid _ [] []) = True
-gameOver _ = False
 
 displayGrid :: Grid -> IO Grid
 displayGrid grid = do
