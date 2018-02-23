@@ -57,7 +57,7 @@ mqttThread gridQueue commandQueue config = M.withMosquittoLibrary $ do
 castGridThread :: TQueue Grid -> TQueue (String, BS.ByteString) -> STM ()
 castGridThread input output = do
     grid <- readTQueue input 
-    let message = (\g -> ("traze/1/grid", toStrict $ encode $ gridToGameState g)) grid
+    let message = (\g -> ("traze/1/grid\0", toStrict $ encode $ gridToGameState g)) grid
     writeTQueue output message
 
 handleMessage :: TQueue Command -> Message -> STM ()
