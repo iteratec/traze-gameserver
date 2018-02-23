@@ -19,6 +19,7 @@ COPY --from=builder /lib/x86_64-linux-gnu/libssl.so.1.0.0 /lib/x86_64-linux-gnu/
 COPY --from=builder /lib/x86_64-linux-gnu/libcrypto.so.1.0.0 /lib/x86_64-linux-gnu/libcrypto.so.1.0.0
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libcares.so.2 /usr/lib/x86_64-linux-gnu/libcares.so.2 
 
+COPY --from=builder /usr/src/traze/traze.yml /
 COPY --from=builder /root/.local/bin/traze-exe /usr/bin/traze
 
 ENTRYPOINT ["traze"]
