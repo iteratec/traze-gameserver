@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a5f455514d451ae5e47694cc890fdd035343be84aaeddada8e888204f3fcf973
+-- hash: 412017b58df4afe7b2ada9c73a89ef9b3df0eea3083c7967c575fa3d931283e2
 
 name:           traze
 version:        0.1.0.0
@@ -41,6 +41,35 @@ library
       SpawnQueue
       Tuple
   other-modules:
+      Paths_traze
+  default-language: Haskell2010
+
+executable haskell-client
+  main-is: Client.hs
+  hs-source-dirs:
+      client
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -main-is Client
+  build-depends:
+      aeson >=1.2.3 && <1.3
+    , ansi-terminal >=0.5
+    , async >=2.0.1.5
+    , base >=4.7 && <5
+    , bytestring >=0.10 && <0.11
+    , c-mosquitto >=0.1.2 && <=0.2
+    , monad-loops >=0.4.3
+    , split >=0.2.3 && <0.3
+    , stm >=2.4.5 && <=2.5
+    , text >=1.2 && <2
+    , traze
+    , uuid >=1.3 && <1.4
+    , yaml-config >=0.4.0 && <0.5
+  other-modules:
+      Config
+      Instance
+      Main
+      Mqtt
+      Output
       Paths_traze
   default-language: Haskell2010
 
