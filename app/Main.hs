@@ -2,13 +2,11 @@ module Main where
 
 import GameTypes
 import GameLogic
-import Output
 import SpawnPlayer
 import SpawnQueue
 import Mqtt
 import Config
 
-import System.IO
 import System.Console.ANSI
 
 import Control.Concurrent
@@ -36,45 +34,25 @@ runGrid grid = do
 
     config <- getConfig
 
+    -- outgoing messages via mqtt
     mqttQueue <- atomically $ newTQueue
+
+    -- incomming commands
     inputQueue <- atomically $ newTQueue
-    _ <- forkIO $ mqttThread mqttQueue inputQueue config
 
-    _ <- forkIO $ forever $ inputThread inputQueue
-
+    -- new game states
     gridQueue <- atomically $ newTQueue
+
+    _ <- forkIO $ mqttThread mqttQueue inputQueue config
     _ <- forkIO $ forever $ atomically $ castGridThread gridQueue mqttQueue
 
     gameProcess <- async $ gameThread grid gridQueue inputQueue
+
     wait gameProcess
     return ()
 
 initialGrid :: IO Grid
-initialGrid = return $ fst $ spawnPlayer $ fst $ spawnPlayer (Grid (30,20) [] [])
-
-commandFromChar :: Maybe Char -> Maybe Command
-commandFromChar Nothing = Nothing
-commandFromChar (Just c)
-    | c == 'w' = Just $ MoveCommand 1 (Steer N)
-    | c == 'a' = Just $ MoveCommand 1 (Steer W)
-    | c == 's' = Just $ MoveCommand 1 (Steer S)
-    | c == 'd' = Just $ MoveCommand 1 (Steer E)
-    | c == 'i' = Just $ MoveCommand 2 (Steer N)
-    | c == 'j' = Just $ MoveCommand 2 (Steer W)
-    | c == 'k' = Just $ MoveCommand 2 (Steer S)
-    | c == 'l' = Just $ MoveCommand 2 (Steer E)
-    | otherwise = Nothing
-
--- Reads a char from stdin and writes a command accordingly into the input queue
-inputThread :: TQueue Command -> IO ()
-inputThread queue = do
-    char <- getInput
-    case command char of
-        Nothing -> return ()
-        Just c -> atomically $ writeTQueue queue c
-
-        where command :: Char -> Maybe Command
-              command c = commandFromChar $ Just c
+initialGrid = return $ Grid (64,64) [] []
 
 gameThread :: Grid -> TQueue Grid -> TQueue Command -> IO ()
 gameThread grid gq cq = do
@@ -94,21 +72,4 @@ respawnPlayerIfNeeded :: Grid -> Grid
 respawnPlayerIfNeeded grid@(Grid _ bs queue)
     | (length (bs ++ (map unQueueItem queue))) < 2  = fst $ spawnPlayer grid 
     | otherwise = grid
-
-displayThread :: TQueue Grid -> IO ()
-displayThread gridQueue = forever $ do
-    grid <- atomically $ readTQueue gridQueue
-    displayGrid grid
-
-getInput :: IO Char
-getInput = hSetEcho stdin False
-    >> hSetBuffering stdin NoBuffering
-    >> getChar
-
-displayGrid :: Grid -> IO Grid
-displayGrid grid = do
-    setCursorPosition 0 0
-    printGrid grid
-    putStrLn $ show grid
-    return grid
 
