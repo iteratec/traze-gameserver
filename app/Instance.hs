@@ -8,6 +8,8 @@ import Data.Maybe
 import Data.List
 import Data.UUID
 
+import Control.Monad (liftM)
+
 type Session        = UUID
 type InstanceName   = String
 type Nick           = String
@@ -33,32 +35,32 @@ data Interaction
   | JoinRequest MqttClientName Nick
 
 -- | runs a round of interactions on a given instance.
-runInstance :: Instance -> [Interaction] -> (Instance, [Death], [Player])
-runInstance inst @ (Instance grid instanceName players) interactions = 
-  (Instance finalGrid instanceName players', deaths, newPlayers)
-  where (grid', deaths)      = play grid commands
-        players'             = playersAfterRound ++ newPlayers
-        playersAfterRound    = (notDead players deaths)
-        inst'                = Instance grid' instanceName playersAfterRound
-        (inst'', newPlayers) = chainApply spawnPlayer inst' interactions
-        finalGrid            = unGrid inst''
-        commands             = map fromJust $ filter isJust $ map commandFromInteraction interactions
+runInstance :: Instance -> [Interaction] -> IO (Instance, [Death], [Player])
+runInstance inst @ (Instance grid instanceName players) interactions = do
+  let commands = map fromJust $ filter isJust $ map commandFromInteraction interactions
+  let (grid', deaths) = play grid commands
+  let playersAfterRound = (notDead players deaths)
+  let inst' = Instance grid' instanceName playersAfterRound
+  (inst'', newPlayers) <- chainApply spawnPlayerOnInstance inst' interactions
+  let players' = playersAfterRound ++ newPlayers
+  let finalGrid = unGrid inst''
+  return (Instance finalGrid instanceName players', deaths, newPlayers)
 
-spawnPlayer :: Instance -> Interaction -> (Instance, Maybe Player)
-spawnPlayer inst (JoinRequest mqttClientname nick) = undefined
-spawnPlayer inst (GridCommand _) = (inst, Nothing)
+spawnPlayerOnInstance :: Instance -> Interaction -> IO (Instance, Maybe Player)
+spawnPlayerOnInstance inst (JoinRequest mqttClientname nick) = undefined
+spawnPlayerOnInstance inst (GridCommand _) = return (inst, Nothing)
 
 commandFromInteraction :: Interaction -> Maybe Command
 commandFromInteraction (GridCommand c)   = Just c
 commandFromInteraction _ = Nothing
 
-chainApply :: (a -> b -> (a, Maybe c)) -> a -> [b] -> (a, [c])
-chainApply _ a [] = (a, [])
-chainApply f a (b:bs)
-  | isJust c''     = (a'', ((fromJust c''): cs'))
-  | otherwise      = (a'', cs')
-  where (a'', c'') = f a' b
-        (a', cs')  = chainApply f a bs
+chainApply :: (a -> b -> IO (a, Maybe c)) -> a -> [b] -> IO (a, [c])
+chainApply _ a [] = return (a, [])
+chainApply f a (b:bs) = do
+  (a', cs')  <- chainApply f a bs
+  (a'', c'') <- f a' b
+  if isJust c'' then return (a'', ((fromJust c''): cs'))
+  else return (a'', cs')
 
 notDead :: [Player] -> [Death] -> [Player]
 notDead ps ds = filter (\p -> (Instance.unPlayerId p) `elem` (concatMap getDeadPlayerId ds)) ps
