@@ -38,7 +38,7 @@ If you want to write an ai pilot you can do so by parsing the MQTT repersentatio
       {
         "playerId":2,
         "currentLocation":[1,0],
-        "direction":"E",
+        "direction":"W",
         "trail":[[2,0],[2,1]]
         }
    ]
