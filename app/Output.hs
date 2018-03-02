@@ -172,10 +172,10 @@ gridToLineStrings g = (map . map) (getPosChar g) $ getGridCoords $ unGridSize g
 
 getGridCoords :: GridSize -> [[Coordinate]]
 getGridCoords (maxX, maxY) =
-    map (getLineCoords (maxX, maxY)) $ map ((-) maxY) [0..maxY]
+    map (getLineCoords (maxX, maxY)) $ [0..maxX]
 
 getLineCoords :: GridSize -> Int -> [Coordinate]
-getLineCoords (maxX,_) y = [(x,y) | x <- [0..maxX]]
+getLineCoords (maxY,_) x = [(x,y) | y <- [0..maxY]]
 
 getFrameChar :: GridSize -> Coordinate -> Maybe Char
 getFrameChar (maxX, maxY) (x, y)
