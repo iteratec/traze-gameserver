@@ -45,6 +45,14 @@ data Grid = Grid {
 } deriving (Show, Eq)
 
 -- ticks to start playing
+type Tick = DeathTick
+
+data DeathTick = DeathTick {
+    type :: String,
+    casualty :: PlayerId,
+    fragger :: PlayerId
+}
+
 type TimeToLive = Int
 
 data Death = Suicide PlayerId
@@ -52,5 +60,3 @@ data Death = Suicide PlayerId
            | Frag PlayerId  PlayerId
            | Collision PlayerId PlayerId
     deriving (Show, Eq)
-
-
