@@ -65,7 +65,7 @@ executeInstance inst = do
     return ()
 
 initialGrid :: IO Grid
-initialGrid = return $ Grid (10,10) [] []
+initialGrid = return $ Grid (62,62) [] []
 
 initialInstance :: IO Instance
 initialInstance = do
