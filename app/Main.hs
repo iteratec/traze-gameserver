@@ -6,6 +6,7 @@ import SpawnPlayer
 import SpawnQueue
 import Mqtt
 import Config
+import Output
 
 import System.Console.ANSI
 
@@ -48,6 +49,8 @@ runGrid grid = do
 
     _ <- forkIO $ mqttThread mqttQueue inputQueue config
     _ <- forkIO $ forever $ atomically $ castGridThread gridQueue mqttQueue
+    _ <- forkIO $ forever $ atomically $ castTickThread tickerQueue mqttQueue
+
 
     gameProcess <- async $ gameThread grid gridQueue inputQueue tickerQueue
 
@@ -77,10 +80,10 @@ respawnPlayerIfNeeded grid@(Grid _ bs queue)
     | (length (bs ++ (map unQueueItem queue))) < 2  = fst $ spawnPlayer grid
     | otherwise = grid
 
-sendDeaths :: [Death] -> TQueue -> IO ()
-sendDeaths deaths  tickQueue = map (sendDeath tickQueue) deaths
+sendDeaths :: [Death] -> TQueue Tick-> IO ()
+sendDeaths deaths tickQueue = mapM_ (sendDeath tickQueue) deaths
 
-sendDeath :: TQueue -> Death -> IO ()
-sendDeath tickQueue (Frag p1 p2) = writeTQueue tickQueue (DeathTick "Player fragged" p1 p2)
-sendDeath tickQueue (Collision p1 p2) = writeTQueue tickQueue (DeathTick "Two players collided" p1 p2)
-sendDeath tickQueue (Suicide p1) = writeTQueue tickQueue (DeathTick "Player killed himself" p1 p1)
+sendDeath :: TQueue Tick -> Death -> IO ()
+sendDeath tickQueue (Frag p1 p2) = atomically $ writeTQueue tickQueue (DeathTick "frag" p1 p2)
+sendDeath tickQueue (Collision p1 p2) = atomically $ writeTQueue tickQueue (DeathTick "collision" p1 p2)
+sendDeath tickQueue (Suicide p1) = atomically $ writeTQueue tickQueue (DeathTick "suicide" p1 p1)

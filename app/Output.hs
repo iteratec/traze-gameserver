@@ -33,6 +33,17 @@ instance ToJSON OutputBike where
     toEncoding = genericToEncoding defaultOptions
 instance FromJSON OutputBike
 
+type Tick = DeathTick
+data DeathTick = DeathTick {
+    deTiType :: String,
+    deTiCasualty :: PlayerId,
+    deTiFragger :: PlayerId
+} deriving (Generic, Show, Eq)
+
+instance ToJSON DeathTick where
+    toEncoding = genericToEncoding defaultOptions
+instance FromJSON DeathTick
+
 data SteerInput = SteerInput {
     stInCourse :: Course,
     stInPlayerToken :: String
@@ -81,8 +92,8 @@ gridToString :: Grid -> String
 gridToString = intercalate "\n" . gridToLineStrings
 
 gridToLineStrings :: Grid -> [String]
-gridToLineStrings g = (map . map) (getPosChar g) $ getGridCoords $ unGridSize g 
-    
+gridToLineStrings g = (map . map) (getPosChar g) $ getGridCoords $ unGridSize g
+
 getGridCoords :: GridSize -> [[Coordinate]]
 getGridCoords (maxX, maxY) =
     map (getLineCoords (maxX, maxY)) $ map ((-) maxY) [(0)..(maxY+1)]
@@ -95,7 +106,7 @@ getFrameChar (maxX, maxY) (x, y)
     | isOut x maxX && isOut y maxY = Just '+'
     | isOut x maxX = Just '|'
     | isOut y maxY = Just '-'
-    | otherwise = Nothing 
+    | otherwise = Nothing
     where isOut a bound = a >= bound || a < 0
 
 getPosChar :: Grid -> Coordinate -> Char

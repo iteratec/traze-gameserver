@@ -10,8 +10,8 @@ import qualified Data.ByteString as BS
 import Control.Concurrent
 import Control.Concurrent.STM.TQueue
 
-import Control.Monad 
-import Control.Monad.STM 
+import Control.Monad
+import Control.Monad.STM
 import Data.Aeson
 import Data.List.Split
 
@@ -22,12 +22,12 @@ import Network.Mosquitto.Internal.Types
 
 data MqttMessage = MqttMessage String BS.ByteString
 
-data MessageType 
+data MessageType
     = Steering InstanceName PlayerId
     | Bail InstanceName PlayerId
     | Join InstanceName
 
--- | publish 
+-- | publish
 mqttThread :: TQueue (String, BS.ByteString) -> TQueue Command -> Config -> IO ()
 mqttThread gridQueue commandQueue config = M.withMosquittoLibrary $ do
     m <- M.newMosquitto True (clientName config) (Just ())
@@ -56,8 +56,14 @@ mqttThread gridQueue commandQueue config = M.withMosquittoLibrary $ do
 
 castGridThread :: TQueue Grid -> TQueue (String, BS.ByteString) -> STM ()
 castGridThread input output = do
-    grid <- readTQueue input 
+    grid <- readTQueue input
     let message = (\g -> ("traze/1/grid\0", toStrict $ encode $ gridToGameState g)) grid
+    writeTQueue output message
+
+castTickThread :: TQueue Tick -> TQueue (String, BS.ByteString) -> STM ()
+castTickThread input output = do
+    tick <- readTQueue input
+    let message = (\g -> ("traze/1/ticker\0", toStrict $ encode g)) tick
     writeTQueue output message
 
 handleMessage :: TQueue Command -> Message -> STM ()
@@ -73,7 +79,7 @@ writeSteerCommand queue pid (Just stin) = writeTQueue queue (MoveCommand pid (St
 writeBailCommand :: TQueue Command -> PlayerId -> Maybe BailInput -> STM ()
 writeBailCommand _ _ Nothing = return ()
 writeBailCommand queue pid (Just _) = writeTQueue queue (Quit pid)
-    
+
 parseTopic :: String -> Maybe MessageType
 parseTopic top = case (splitOn "/" top) of
      ("traze" : instName : pid : "steer" : []) -> Just $ Steering instName (read pid)
