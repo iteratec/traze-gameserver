@@ -7,6 +7,7 @@ import SpawnQueue
 import Data.Maybe
 import Control.Monad
 import Data.List
+import Data.Char
 import Data.Aeson
 
 import GHC.Generics
@@ -23,15 +24,18 @@ instance ToJSON GameState where
 instance FromJSON GameState
 
 data OutputBike = OutputBike {
-    playerId :: Int,
-    currentLocation :: Coordinate,
-    direction :: Course,
-    trail :: [Coordinate]
+    ouBiPlayerId :: Int,
+    ouBiCurrentLocation :: Coordinate,
+    ouBiDirection :: Course,
+    ouBiTrail :: [Coordinate]
 } deriving (Generic, Show, Eq)
 
 instance ToJSON OutputBike where
-    toEncoding = genericToEncoding defaultOptions
-instance FromJSON OutputBike
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON OutputBike where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
 
 data SteerInput = SteerInput {
     stInCourse :: Course,
@@ -40,18 +44,35 @@ data SteerInput = SteerInput {
 
 instance ToJSON SteerInput where
     toJSON = genericToJSON defaultOptions {
-      fieldLabelModifier = drop 4 }
+      fieldLabelModifier = modifyName}
 instance FromJSON SteerInput where
     parseJSON = genericParseJSON defaultOptions {
-      fieldLabelModifier = drop 4}
+      fieldLabelModifier = modifyName}
 
 data BailInput = BailInput {
-    playerToken :: String
+    bailPlayerToken :: String
 } deriving (Generic, Show, Eq)
 
 instance ToJSON BailInput where
-    toEncoding = genericToEncoding defaultOptions
-instance FromJSON BailInput
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON BailInput where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+
+data JoinInput = JoinInput {
+    joInName :: String
+} deriving (Generic, Show, Eq)
+
+instance ToJSON JoinInput where
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON JoinInput where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+
+modifyName :: String -> String
+modifyName input = ((toLower . head . drop 4) input) : (drop 5 input)
 
 gridToGameState :: Grid -> GameState
 gridToGameState g =
@@ -85,10 +106,10 @@ gridToLineStrings g = (map . map) (getPosChar g) $ getGridCoords $ unGridSize g
     
 getGridCoords :: GridSize -> [[Coordinate]]
 getGridCoords (maxX, maxY) =
-    map (getLineCoords (maxX, maxY)) $ map ((-) maxY) [(0)..(maxY+1)]
+    map (getLineCoords (maxX, maxY)) $ map ((-) maxY) [0..maxY]
 
 getLineCoords :: GridSize -> Int -> [Coordinate]
-getLineCoords (maxX,_) y = [(x,y) | x <- [(-1)..(maxX)]]
+getLineCoords (maxX,_) y = [(x,y) | x <- [0..maxX]]
 
 getFrameChar :: GridSize -> Coordinate -> Maybe Char
 getFrameChar (maxX, maxY) (x, y)
