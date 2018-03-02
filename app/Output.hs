@@ -114,6 +114,20 @@ instance FromJSON InstancesOutput where
     parseJSON = genericParseJSON defaultOptions {
       fieldLabelModifier = modifyName}
 
+data PlayerOutput = PlayerOutput{
+    plOuId :: String,
+    plOuName :: String,
+    plOuColor :: String,
+    plOuFrags :: Int,
+    plOuOwned :: Int
+} deriving (Generic, Show, Eq)
+
+instance ToJSON PlayerOutput where
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON PlayerOutput where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
 
 modifyName :: String -> String
 modifyName input = ((toLower . head . drop 4) input) : (drop 5 input)
@@ -126,6 +140,10 @@ gridToGameState g =
 playerToAcceptJoinRequestOutput :: Player -> AcceptJoinRequestOutput
 playerToAcceptJoinRequestOutput (Player pid name _ _ color session pos) = 
     AcceptJoinRequestOutput pid name (toString session) color pos
+
+instanceToPlayersOutput :: Instance -> [PlayerOutput]
+instanceToPlayersOutput inst = map i2pl (unPlayer inst)
+    where i2pl (Player pid name frags deaths color _ _) = PlayerOutput (show pid) name color frags deaths
 
 getTiles :: Grid -> [[Int]]
 getTiles g = (map . map) (getPosPlayerId gridBikes) (getGridCoords gs)

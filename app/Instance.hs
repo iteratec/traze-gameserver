@@ -2,7 +2,7 @@ module Instance where
 
 import GameTypes
 import GameLogic (play)
-import SpawnQueue (getFirstJust)
+import SpawnQueue
 import SpawnPlayer
 
 import Data.Maybe
@@ -42,7 +42,7 @@ runInstance :: Instance -> [Interaction] -> IO (Instance, [Death], [Player])
 runInstance inst @ (Instance grid instanceName players) interactions = do
   let commands = map fromJust $ filter isJust $ map commandFromInteraction interactions
   let (grid', deaths) = play grid commands
-  let playersAfterRound = (notDead players deaths)
+  let playersAfterRound = (onGrid players grid')
   let inst' = Instance grid' instanceName playersAfterRound
   (inst'', newPlayers) <- chainApply spawnPlayerOnInstance inst' interactions
   let players' = playersAfterRound ++ newPlayers
@@ -74,8 +74,8 @@ chainApply f a (b:bs) = do
   if isJust c'' then return (a'', ((fromJust c''): cs'))
   else return (a'', cs')
 
-notDead :: [Player] -> [Death] -> [Player]
-notDead ps ds = filter (\p -> (Instance.unPlayerId p) `elem` (concatMap getDeadPlayerId ds)) ps
+onGrid :: [Player] -> Grid -> [Player]
+onGrid ps grid = filter (\p -> (Instance.unPlayerId p) `elem` (map GameTypes.unPlayerId (unBikes grid ++ map unQueueItem (unQueue grid)))) ps
 
 getDeadPlayerId :: Death -> [PlayerId]
 getDeadPlayerId (Suicide pid)         = [pid]

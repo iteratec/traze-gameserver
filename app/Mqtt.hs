@@ -64,13 +64,15 @@ castTickThread input output = do
 castGameInstancesThread :: TQueue Instance -> TQueue (String, BS.ByteString) -> STM ()
 castGameInstancesThread input output = do
     inst <- peekTQueue input
-    writeTQueue output ("traze/games", toStrict $ encode $ (InstancesOutput (unName inst) (length $ unPlayer inst)))
+    writeTQueue output ("traze/games", toStrict $ encode $ [(InstancesOutput (unName inst) (length $ unPlayer inst))])
     
 castInstanceThread :: TQueue Instance -> TQueue (String, BS.ByteString) -> STM ()
 castInstanceThread input output = do
     inst <- readTQueue input 
     let message = (\i -> ("traze/1/grid\0", toStrict $ encode $ gridToGameState $ unGrid i)) inst
+    let playerMessage = (\i -> ("traze/1/players\0", toStrict $ encode $ instanceToPlayersOutput $ i)) inst
     writeTQueue output message
+    writeTQueue output playerMessage
 
 castNewPlayerThread :: TQueue Player -> TQueue (String, BS.ByteString) -> STM ()
 castNewPlayerThread input output = do
