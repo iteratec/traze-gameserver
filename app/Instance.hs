@@ -3,10 +3,12 @@ module Instance where
 import GameTypes
 import GameLogic (play)
 import SpawnQueue (getFirstJust)
+import SpawnPlayer
 
 import Data.Maybe
 import Data.List
 import Data.UUID
+import System.Random
 
 import Control.Monad (liftM)
 
@@ -19,16 +21,17 @@ data Instance = Instance {
   unGrid   :: Grid,
   unName   :: String,
   unPlayer :: [Player]
-}
+} deriving (Show, Eq)
 
 data Player = Player {
-  unPlayerId   :: PlayerId,
-  unPlayerName :: String,
-  unFrags      :: Int,
-  unDeaths     :: Int,
-  unColor      :: String,
-  unSession    :: Session
-}
+  unPlayerId     :: PlayerId,
+  unPlayerName   :: String,
+  unFrags        :: Int,
+  unDeaths       :: Int,
+  unColor        :: String,
+  unSession      :: Session,
+  unInitPosition :: Coordinate
+} deriving (Show, Eq)
 
 data Interaction 
   = GridCommand Command
@@ -47,8 +50,17 @@ runInstance inst @ (Instance grid instanceName players) interactions = do
   return (Instance finalGrid instanceName players', deaths, newPlayers)
 
 spawnPlayerOnInstance :: Instance -> Interaction -> IO (Instance, Maybe Player)
-spawnPlayerOnInstance inst (JoinRequest mqttClientname nick) = undefined
 spawnPlayerOnInstance inst (GridCommand _) = return (inst, Nothing)
+spawnPlayerOnInstance inst @ (Instance grid instanceName players) (JoinRequest mqttClientname nick) = do
+  let (grid', maybeBike) = spawnPlayer grid
+  if isJust maybeBike then do
+    let pid = GameTypes.unPlayerId $ fromJust maybeBike
+    let initialPos =  GameTypes.unCurrentLocation $ fromJust maybeBike
+    newUUID <- randomIO
+    let newPlayer = Player pid nick 0 0 "#b1147a" newUUID initialPos
+    return $ ((Instance grid' instanceName (newPlayer : players)), Just newPlayer)
+  else
+    return (inst, Nothing)
 
 commandFromInteraction :: Interaction -> Maybe Command
 commandFromInteraction (GridCommand c)   = Just c

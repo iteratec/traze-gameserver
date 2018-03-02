@@ -3,12 +3,14 @@ module Output where
 
 import GameTypes
 import SpawnQueue
+import Instance
 
 import Data.Maybe
 import Control.Monad
 import Data.List
 import Data.Char
 import Data.Aeson
+import Data.UUID
 
 import GHC.Generics
 
@@ -71,6 +73,21 @@ instance FromJSON JoinInput where
     parseJSON = genericParseJSON defaultOptions {
       fieldLabelModifier = modifyName}
 
+data AcceptJoinRequestOutput = AcceptJoinRequestOutput {
+    aJROId :: Int,
+    aJROName :: String,
+    aJROSecretUserToken :: String,
+    aJROColor :: String,
+    aJROPosition :: Coordinate
+} deriving (Generic, Show, Eq)
+
+instance ToJSON AcceptJoinRequestOutput where
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON AcceptJoinRequestOutput where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+
 modifyName :: String -> String
 modifyName input = ((toLower . head . drop 4) input) : (drop 5 input)
 
@@ -78,6 +95,10 @@ gridToGameState :: Grid -> GameState
 gridToGameState g =
     GameState maxY maxX (getTiles g) (map getOutputBike gridBikes)
     where (Grid (maxX, maxY) gridBikes _) = g
+
+playerToAcceptJoinRequestOutput :: Player -> AcceptJoinRequestOutput
+playerToAcceptJoinRequestOutput (Player pid name _ _ color session pos) = 
+    AcceptJoinRequestOutput pid name (toString session) color pos
 
 getTiles :: Grid -> [[Int]]
 getTiles g = (map . map) (getPosPlayerId gridBikes) (getGridCoords gs)
@@ -88,7 +109,7 @@ getPosPlayerId bs c = fromMaybe 0 $ getFirstJust $ map (getPid c) bs
 
 getPid :: Coordinate -> Bike -> Maybe PlayerId
 getPid c b
-    | c `elem` (unTrail b) = Just (unPlayerId b)
+    | c `elem` (unTrail b) = Just (GameTypes.unPlayerId b)
     | otherwise = Nothing
 
 getOutputBike :: Bike -> OutputBike
