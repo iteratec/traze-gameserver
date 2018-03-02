@@ -55,6 +55,12 @@ mqttThread messageQueue commandQueue playerq config = M.withMosquittoLibrary $ d
     M.destroyMosquitto m
     return ()
 
+castGameInstancesThread :: TQueue Instance -> TQueue (String, BS.ByteString) -> STM ()
+castGameInstancesThread input output = do
+    inst <- peekTQueue input
+    writeTQueue output ("traze/games", toStrict $ encode $ (InstancesOutput (unName inst) (length $ unPlayer inst)))
+    
+
 castInstanceThread :: TQueue Instance -> TQueue (String, BS.ByteString) -> STM ()
 castInstanceThread input output = do
     inst <- readTQueue input 

@@ -50,6 +50,9 @@ executeInstance inst = do
     _ <- forkIO $ mqttThread mqttQueue inputQueue newPlayerQueue config
     _ <- forkIO $ forever $ atomically $ castInstanceThread gameStateQueue mqttQueue
     _ <- forkIO $ forever $ atomically $ castNewPlayerThread newPlayerQueue mqttQueue
+    _ <- forkIO $ forever $ do
+        threadDelay $ 5 * oneSecond
+        atomically $ castGameInstancesThread gameStateQueue mqttQueue
 
     gameProcess <- async $ gameThread inst gameStateQueue inputQueue newPlayerQueue
 

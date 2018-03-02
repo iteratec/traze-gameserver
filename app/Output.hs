@@ -88,6 +88,19 @@ instance FromJSON AcceptJoinRequestOutput where
     parseJSON = genericParseJSON defaultOptions {
       fieldLabelModifier = modifyName}
 
+data InstancesOutput = InstancesOutput{
+    instName :: String,
+    instActivePlayers :: Int
+} deriving (Generic, Show, Eq)
+
+instance ToJSON InstancesOutput where
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON InstancesOutput where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+
+
 modifyName :: String -> String
 modifyName input = ((toLower . head . drop 4) input) : (drop 5 input)
 
