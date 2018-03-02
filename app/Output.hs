@@ -47,8 +47,11 @@ data DeathTick = DeathTick {
 } deriving (Generic, Show, Eq)
 
 instance ToJSON DeathTick where
-    toEncoding = genericToEncoding defaultOptions
-instance FromJSON DeathTick
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON DeathTick where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
 
 data SteerInput = SteerInput {
     stInCourse :: Course,

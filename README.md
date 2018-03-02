@@ -73,7 +73,7 @@ Finally there is a ticker topic that informs about frags that occoured on a give
 ```json
 {
   "type": "frag",
-  "casulty": 2,
+  "casualty": 2,
   "fragger": 4
 }
 ```
