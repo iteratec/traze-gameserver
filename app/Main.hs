@@ -50,7 +50,7 @@ runGrid grid = do
     return ()
 
 initialGrid :: IO Grid
-initialGrid = return $ fst $ spawnPlayer $ fst $ spawnPlayer (Grid (30,20) [] [])
+initialGrid = return $ fst $ spawnPlayer $ fst $ spawnPlayer (Grid (62,62) [] [])
 
 commandFromChar :: Maybe Char -> Maybe Command
 commandFromChar Nothing = Nothing
