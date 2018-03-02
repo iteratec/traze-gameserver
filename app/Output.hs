@@ -3,11 +3,14 @@ module Output where
 
 import GameTypes
 import SpawnQueue
+import Instance
 
 import Data.Maybe
 import Control.Monad
 import Data.List
+import Data.Char
 import Data.Aeson
+import Data.UUID
 
 import GHC.Generics
 
@@ -23,15 +26,18 @@ instance ToJSON GameState where
 instance FromJSON GameState
 
 data OutputBike = OutputBike {
-    playerId :: Int,
-    currentLocation :: Coordinate,
-    direction :: Course,
-    trail :: [Coordinate]
+    ouBiPlayerId :: Int,
+    ouBiCurrentLocation :: Coordinate,
+    ouBiDirection :: Course,
+    ouBiTrail :: [Coordinate]
 } deriving (Generic, Show, Eq)
 
 instance ToJSON OutputBike where
-    toEncoding = genericToEncoding defaultOptions
-instance FromJSON OutputBike
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON OutputBike where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
 
 type Tick = DeathTick
 data DeathTick = DeathTick {
@@ -51,23 +57,72 @@ data SteerInput = SteerInput {
 
 instance ToJSON SteerInput where
     toJSON = genericToJSON defaultOptions {
-      fieldLabelModifier = drop 4 }
+      fieldLabelModifier = modifyName}
 instance FromJSON SteerInput where
     parseJSON = genericParseJSON defaultOptions {
-      fieldLabelModifier = drop 4}
+      fieldLabelModifier = modifyName}
 
 data BailInput = BailInput {
-    playerToken :: String
+    bailPlayerToken :: String
 } deriving (Generic, Show, Eq)
 
 instance ToJSON BailInput where
-    toEncoding = genericToEncoding defaultOptions
-instance FromJSON BailInput
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON BailInput where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+
+data JoinInput = JoinInput {
+    joInName :: String
+} deriving (Generic, Show, Eq)
+
+instance ToJSON JoinInput where
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON JoinInput where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+
+data AcceptJoinRequestOutput = AcceptJoinRequestOutput {
+    aJROId :: Int,
+    aJROName :: String,
+    aJROSecretUserToken :: String,
+    aJROColor :: String,
+    aJROPosition :: Coordinate
+} deriving (Generic, Show, Eq)
+
+instance ToJSON AcceptJoinRequestOutput where
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON AcceptJoinRequestOutput where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+
+data InstancesOutput = InstancesOutput{
+    instName :: String,
+    instActivePlayers :: Int
+} deriving (Generic, Show, Eq)
+
+instance ToJSON InstancesOutput where
+    toJSON = genericToJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+instance FromJSON InstancesOutput where
+    parseJSON = genericParseJSON defaultOptions {
+      fieldLabelModifier = modifyName}
+
+
+modifyName :: String -> String
+modifyName input = ((toLower . head . drop 4) input) : (drop 5 input)
 
 gridToGameState :: Grid -> GameState
 gridToGameState g =
     GameState maxY maxX (getTiles g) (map getOutputBike gridBikes)
     where (Grid (maxX, maxY) gridBikes _) = g
+
+playerToAcceptJoinRequestOutput :: Player -> AcceptJoinRequestOutput
+playerToAcceptJoinRequestOutput (Player pid name _ _ color session pos) = 
+    AcceptJoinRequestOutput pid name (toString session) color pos
 
 getTiles :: Grid -> [[Int]]
 getTiles g = (map . map) (getPosPlayerId gridBikes) (getGridCoords gs)
@@ -78,7 +133,7 @@ getPosPlayerId bs c = fromMaybe 0 $ getFirstJust $ map (getPid c) bs
 
 getPid :: Coordinate -> Bike -> Maybe PlayerId
 getPid c b
-    | c `elem` (unTrail b) = Just (unPlayerId b)
+    | c `elem` (unTrail b) = Just (GameTypes.unPlayerId b)
     | otherwise = Nothing
 
 getOutputBike :: Bike -> OutputBike
@@ -96,10 +151,10 @@ gridToLineStrings g = (map . map) (getPosChar g) $ getGridCoords $ unGridSize g
 
 getGridCoords :: GridSize -> [[Coordinate]]
 getGridCoords (maxX, maxY) =
-    map (getLineCoords (maxX, maxY)) $ map ((-) maxY) [(0)..(maxY+1)]
+    map (getLineCoords (maxX, maxY)) $ map ((-) maxY) [0..maxY]
 
 getLineCoords :: GridSize -> Int -> [Coordinate]
-getLineCoords (maxX,_) y = [(x,y) | x <- [(-1)..(maxX)]]
+getLineCoords (maxX,_) y = [(x,y) | x <- [0..maxX]]
 
 getFrameChar :: GridSize -> Coordinate -> Maybe Char
 getFrameChar (maxX, maxY) (x, y)

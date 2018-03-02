@@ -5,8 +5,9 @@ import GameLogic
 import SpawnPlayer
 import SpawnQueue
 import Mqtt
-import Config
 import Output
+import Instance
+import Config
 
 import System.Console.ANSI
 
@@ -20,9 +21,9 @@ import Control.Monad.Loops
 import Debug.Trace
 
 main :: IO ()
-main = clearScreen
-    >> initialGrid
-    >>= runGrid
+main = do
+    executeInstance =<< initialInstance
+    return ()
 
 oneSecond :: Int
 oneSecond = (10 :: Int) ^ (6 :: Int)
@@ -30,8 +31,8 @@ oneSecond = (10 :: Int) ^ (6 :: Int)
 sampleLength :: Int
 sampleLength = oneSecond `div` 4
 
-runGrid :: Grid -> IO ()
-runGrid grid = do
+executeInstance :: Instance -> IO ()
+executeInstance inst = do
 
     config <- getConfig
 
@@ -42,38 +43,49 @@ runGrid grid = do
     inputQueue <- atomically $ newTQueue
 
     -- new game states
-    gridQueue <- atomically $ newTQueue
+    gameStateQueue <- atomically $ newTQueue
+
+    -- new Players
+    newPlayerQueue <- atomically $ newTQueue
 
     -- new ticker notifications
     tickerQueue <- atomically $ newTQueue
 
-    _ <- forkIO $ mqttThread mqttQueue inputQueue config
-    _ <- forkIO $ forever $ atomically $ castGridThread gridQueue mqttQueue
+    _ <- forkIO $ mqttThread mqttQueue inputQueue newPlayerQueue config
+    _ <- forkIO $ forever $ atomically $ castInstanceThread gameStateQueue mqttQueue
+    _ <- forkIO $ forever $ atomically $ castNewPlayerThread newPlayerQueue mqttQueue
     _ <- forkIO $ forever $ atomically $ castTickThread tickerQueue mqttQueue
+    _ <- forkIO $ forever $ do
+        threadDelay $ 5 * oneSecond
+        atomically $ castGameInstancesThread gameStateQueue mqttQueue
 
-
-    gameProcess <- async $ gameThread grid gridQueue inputQueue tickerQueue
+    gameProcess <- async $ gameThread inst gameStateQueue inputQueue newPlayerQueue tickerQueue
 
     wait gameProcess
     return ()
 
 initialGrid :: IO Grid
-initialGrid = return $ Grid (64,64) [] []
+initialGrid = return $ Grid (62,62) [] []
 
-gameThread :: Grid -> TQueue Grid -> TQueue Command -> TQueue Tick -> IO ()
-gameThread grid gq cq tq = do
-    _ <- iterateUntilM (\_->False) (gameSTM gq cq tq) grid
+initialInstance :: IO Instance
+initialInstance = do
+    grid <- initialGrid
+    return $ Instance grid "1" []
+
+gameThread :: Instance -> TQueue Instance -> TQueue Interaction -> TQueue Player -> TQueue Tick -> IO ()
+gameThread inst instq interq playerq tickerq = do
+    _ <- iterateUntilM (\_->False) (executeInstanceStep instq interq playerq tickerq) inst
     return ()
 
-gameSTM :: TQueue Grid -> TQueue Command -> TQueue Tick -> Grid -> IO (Grid)
-gameSTM gridQueue commandQueue tickQueue grid = do
-    threadDelay (trace "tick" sampleLength)
-    commands <- atomically $ liftM removeDuplicateCommands $ flushTQueue commandQueue
-    let (grid', deaths) = play grid commands
-    sendDeaths deaths tickQueue
-    let grid'' = respawnPlayerIfNeeded grid'
-    atomically $ writeTQueue gridQueue (trace (show grid'') grid'')
-    return grid''
+executeInstanceStep :: TQueue Instance -> TQueue Interaction -> TQueue Player -> TQueue Tick -> Instance -> IO (Instance)
+executeInstanceStep output interactions playerQueue tickerq inst = do
+    threadDelay sampleLength
+    is <- atomically $ flushTQueue interactions -- TODO: remove duplicates
+    (inst', deaths, newPlayers) <- runInstance inst is
+    sendDeaths deaths tickerq
+    mapM (\p -> atomically $ writeTQueue playerQueue p) newPlayers
+    atomically $ writeTQueue output (trace (show inst') inst')
+    return inst'
 
 respawnPlayerIfNeeded :: Grid -> Grid
 respawnPlayerIfNeeded grid@(Grid _ bs queue)
