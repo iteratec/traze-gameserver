@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 412017b58df4afe7b2ada9c73a89ef9b3df0eea3083c7967c575fa3d931283e2
+-- hash: 83a364e75e8763ff11b84b2388cf278aa58acc22be1508a5a8d026c123abbec0
 
 name:           traze
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
   build-depends:
       aeson >=1.2.3 && <1.3
     , base >=4.7 && <5
+    , random >=1.1 && <1.2
     , text >=1.2 && <2
   exposed-modules:
       GameLogic
@@ -58,6 +59,7 @@ executable haskell-client
     , bytestring >=0.10 && <0.11
     , c-mosquitto >=0.1.2 && <=0.2
     , monad-loops >=0.4.3
+    , random >=1.1 && <1.2
     , split >=0.2.3 && <0.3
     , stm >=2.4.5 && <=2.5
     , text >=1.2 && <2
@@ -86,6 +88,7 @@ executable traze-exe
     , bytestring >=0.10 && <0.11
     , c-mosquitto >=0.1.2 && <=0.2
     , monad-loops >=0.4.3
+    , random >=1.1 && <1.2
     , split >=0.2.3 && <0.3
     , stm >=2.4.5 && <=2.5
     , text >=1.2 && <2
@@ -112,6 +115,7 @@ test-suite traze-test
     , aeson >=1.2.3 && <1.3
     , base >=4.7 && <5
     , hspec >=2.4 && <3
+    , random >=1.1 && <1.2
     , text >=1.2 && <2
     , traze
   other-modules:

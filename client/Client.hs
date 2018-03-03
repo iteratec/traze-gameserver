@@ -1,17 +1,12 @@
 module Client where
 
 import GameTypes
-import GameLogic
 import Output
-import SpawnPlayer
-import SpawnQueue
-import Mqtt
 import Config
 
 import Data.Aeson
 
 import System.IO
-import System.Console.ANSI
 
 import Control.Concurrent
 import Control.Concurrent.Async
@@ -19,13 +14,10 @@ import Control.Concurrent.STM.TQueue
 
 import Control.Monad
 import Control.Monad.STM
-import Control.Monad.Loops
 import Debug.Trace
-import Data.ByteString.Lazy (toStrict, fromStrict)
+import Data.ByteString.Lazy (toStrict)
 
 import qualified Network.Mosquitto as M
-import Network.Mosquitto.Internal.Types
-
 import qualified Data.ByteString as BS
 
 main :: IO ()
@@ -41,7 +33,7 @@ main = do
 
     inputProcess <- async $ forever $ inputThread localInputQueue
 
-    wait inputProcess
+    _ <- wait inputProcess
     return ()
 
 inputToMessage :: TQueue Command -> TQueue (String, BS.ByteString) -> STM ()

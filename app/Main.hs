@@ -2,13 +2,13 @@ module Main where
 
 import GameTypes
 import GameLogic
-import Output
 import SpawnPlayer
 import SpawnQueue
 import Mqtt
+import Output
+import Instance
 import Config
 
-import System.IO
 import System.Console.ANSI
 
 import Control.Concurrent
@@ -21,9 +21,9 @@ import Control.Monad.Loops
 import Debug.Trace
 
 main :: IO ()
-main = clearScreen
-    >> initialGrid
-    >>= runGrid
+main = do
+    executeInstance =<< initialInstance
+    return ()
 
 oneSecond :: Int
 oneSecond = (10 :: Int) ^ (6 :: Int)
@@ -31,84 +31,71 @@ oneSecond = (10 :: Int) ^ (6 :: Int)
 sampleLength :: Int
 sampleLength = oneSecond `div` 4
 
-runGrid :: Grid -> IO ()
-runGrid grid = do
+executeInstance :: Instance -> IO ()
+executeInstance inst = do
 
     config <- getConfig
 
+    -- outgoing messages via mqtt
     mqttQueue <- atomically $ newTQueue
+
+    -- incomming commands
     inputQueue <- atomically $ newTQueue
-    _ <- forkIO $ mqttThread mqttQueue inputQueue config
 
-    _ <- forkIO $ forever $ inputThread inputQueue
+    -- new game states
+    gameStateQueue <- atomically $ newTQueue
 
-    gridQueue <- atomically $ newTQueue
-    _ <- forkIO $ forever $ atomically $ castGridThread gridQueue mqttQueue
+    -- new Players
+    newPlayerQueue <- atomically $ newTQueue
 
-    gameProcess <- async $ gameThread grid gridQueue inputQueue
+    -- new ticker notifications
+    tickerQueue <- atomically $ newTQueue
+
+    _ <- forkIO $ mqttThread mqttQueue inputQueue newPlayerQueue config
+    _ <- forkIO $ forever $ atomically $ castInstanceThread gameStateQueue mqttQueue
+    _ <- forkIO $ forever $ atomically $ castNewPlayerThread newPlayerQueue mqttQueue
+    _ <- forkIO $ forever $ atomically $ castTickThread tickerQueue mqttQueue
+    _ <- forkIO $ forever $ do
+        threadDelay $ 5 * oneSecond
+        atomically $ castGameInstancesThread gameStateQueue mqttQueue
+
+    gameProcess <- async $ gameThread inst gameStateQueue inputQueue newPlayerQueue tickerQueue
+
     wait gameProcess
     return ()
 
 initialGrid :: IO Grid
-initialGrid = return $ fst $ spawnPlayer $ fst $ spawnPlayer (Grid (62,62) [] [])
+initialGrid = return $ Grid (62,62) [] []
 
-commandFromChar :: Maybe Char -> Maybe Command
-commandFromChar Nothing = Nothing
-commandFromChar (Just c)
-    | c == 'w' = Just $ MoveCommand 1 (Steer N)
-    | c == 'a' = Just $ MoveCommand 1 (Steer W)
-    | c == 's' = Just $ MoveCommand 1 (Steer S)
-    | c == 'd' = Just $ MoveCommand 1 (Steer E)
-    | c == 'i' = Just $ MoveCommand 2 (Steer N)
-    | c == 'j' = Just $ MoveCommand 2 (Steer W)
-    | c == 'k' = Just $ MoveCommand 2 (Steer S)
-    | c == 'l' = Just $ MoveCommand 2 (Steer E)
-    | otherwise = Nothing
+initialInstance :: IO Instance
+initialInstance = do
+    grid <- initialGrid
+    return $ Instance grid "1" []
 
--- Reads a char from stdin and writes a command accordingly into the input queue
-inputThread :: TQueue Command -> IO ()
-inputThread queue = do
-    char <- getInput
-    case command char of
-        Nothing -> return ()
-        Just c -> atomically $ writeTQueue queue c
-
-        where command :: Char -> Maybe Command
-              command c = commandFromChar $ Just c
-
-gameThread :: Grid -> TQueue Grid -> TQueue Command -> IO ()
-gameThread grid gq cq = do
-    _ <- iterateUntilM (\_->False) (gameSTM gq cq) grid
+gameThread :: Instance -> TQueue Instance -> TQueue Interaction -> TQueue Player -> TQueue Tick -> IO ()
+gameThread inst instq interq playerq tickerq = do
+    _ <- iterateUntilM (\_->False) (executeInstanceStep instq interq playerq tickerq) inst
     return ()
 
-gameSTM :: TQueue Grid -> TQueue Command -> Grid -> IO (Grid)
-gameSTM gridQueue commandQueue grid = do
-    threadDelay (trace "tick" sampleLength)
-    commands <- atomically $ liftM removeDuplicateCommands $ flushTQueue commandQueue
-    let (grid', _) = play grid commands
-    let grid'' = respawnPlayerIfNeeded grid'
-    atomically $ writeTQueue gridQueue (trace (show grid'') grid'')
-    return grid''
+executeInstanceStep :: TQueue Instance -> TQueue Interaction -> TQueue Player -> TQueue Tick -> Instance -> IO (Instance)
+executeInstanceStep output interactions playerQueue tickerq inst = do
+    threadDelay sampleLength
+    is <- atomically $ flushTQueue interactions -- TODO: remove duplicates
+    (inst', deaths, newPlayers) <- runInstance inst is
+    sendDeaths deaths tickerq
+    mapM (\p -> atomically $ writeTQueue playerQueue p) newPlayers
+    atomically $ writeTQueue output (trace (show inst') inst')
+    return inst'
 
 respawnPlayerIfNeeded :: Grid -> Grid
 respawnPlayerIfNeeded grid@(Grid _ bs queue)
-    | (length (bs ++ (map unQueueItem queue))) < 2  = fst $ spawnPlayer grid 
+    | (length (bs ++ (map unQueueItem queue))) < 2  = fst $ spawnPlayer grid
     | otherwise = grid
 
-displayThread :: TQueue Grid -> IO ()
-displayThread gridQueue = forever $ do
-    grid <- atomically $ readTQueue gridQueue
-    displayGrid grid
+sendDeaths :: [Death] -> TQueue Tick-> IO ()
+sendDeaths deaths tickQueue = mapM_ (sendDeath tickQueue) deaths
 
-getInput :: IO Char
-getInput = hSetEcho stdin False
-    >> hSetBuffering stdin NoBuffering
-    >> getChar
-
-displayGrid :: Grid -> IO Grid
-displayGrid grid = do
-    setCursorPosition 0 0
-    printGrid grid
-    putStrLn $ show grid
-    return grid
-
+sendDeath :: TQueue Tick -> Death -> IO ()
+sendDeath tickQueue (Frag p1 p2) = atomically $ writeTQueue tickQueue (DeathTick "frag" p1 p2)
+sendDeath tickQueue (Collision p1 p2) = atomically $ writeTQueue tickQueue (DeathTick "collision" p1 p2)
+sendDeath tickQueue (Suicide p1) = atomically $ writeTQueue tickQueue (DeathTick "suicide" p1 p1)

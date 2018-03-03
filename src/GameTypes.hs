@@ -44,7 +44,6 @@ data Grid = Grid {
    ,unQueue    :: [QueueItem Bike]
 } deriving (Show, Eq)
 
--- ticks to start playing
 type TimeToLive = Int
 
 data Death = Suicide PlayerId
@@ -52,5 +51,3 @@ data Death = Suicide PlayerId
            | Frag PlayerId  PlayerId
            | Collision PlayerId PlayerId
     deriving (Show, Eq)
-
-
