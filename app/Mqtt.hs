@@ -13,6 +13,7 @@ import Control.Concurrent.STM.TQueue
 import Control.Monad
 import Control.Monad.STM
 import Data.Aeson
+import Data.UUID
 import Data.List.Split
 
 import Data.ByteString.Lazy (toStrict, fromStrict)
@@ -89,11 +90,17 @@ handleMessage queue (Message _ top payl _ _) = case parseTopic top of
 
 writeSteerCommand :: TQueue Interaction -> PlayerId -> Maybe SteerInput -> STM ()
 writeSteerCommand _ _ Nothing = return ()
-writeSteerCommand queue pid (Just stin) = writeTQueue queue $ GridCommand (MoveCommand pid (Steer $ stInCourse stin))
+writeSteerCommand queue pid (Just stin) = case uuid of
+    Just session ->  writeTQueue queue $ GridCommand (MoveCommand pid (Steer $ stInCourse stin)) session
+    Nothing -> return ()
+    where uuid = (Data.UUID.fromString $ stInPlayerToken stin)
 
 writeBailCommand :: TQueue Interaction -> PlayerId -> Maybe BailInput -> STM ()
 writeBailCommand _ _ Nothing = return ()
-writeBailCommand queue pid (Just _) = writeTQueue queue $ GridCommand (Quit pid)
+writeBailCommand queue pid (Just input) = case uuid of
+    Just session -> writeTQueue queue $ GridCommand (Quit pid) session
+    Nothing -> return ()
+    where uuid = (Data.UUID.fromString $ bailPlayerToken input)
 
 writeJoinCommand :: TQueue Interaction -> Maybe JoinInput -> STM()
 writeJoinCommand _ Nothing = return ()
