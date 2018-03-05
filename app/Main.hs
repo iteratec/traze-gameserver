@@ -1,15 +1,12 @@
 module Main where
 
 import GameTypes
-import GameLogic
 import SpawnPlayer
 import SpawnQueue
 import Mqtt
 import Output
 import Instance
 import Config
-
-import System.Console.ANSI
 
 import Control.Concurrent
 import Control.Concurrent.Async
@@ -51,7 +48,7 @@ executeInstance inst = do
     -- new ticker notifications
     tickerQueue <- atomically $ newTQueue
 
-    _ <- forkIO $ mqttThread mqttQueue inputQueue newPlayerQueue config
+    _ <- forkIO $ mqttThread mqttQueue inputQueue config
     _ <- forkIO $ forever $ atomically $ castInstanceThread gameStateQueue mqttQueue
     _ <- forkIO $ forever $ atomically $ castNewPlayerThread newPlayerQueue mqttQueue
     _ <- forkIO $ forever $ atomically $ castTickThread tickerQueue mqttQueue
@@ -83,7 +80,7 @@ executeInstanceStep output interactions playerQueue tickerq inst = do
     is <- atomically $ flushTQueue interactions -- TODO: remove duplicates
     (inst', deaths, newPlayers) <- runInstance inst is
     sendDeaths deaths tickerq
-    mapM (\p -> atomically $ writeTQueue playerQueue p) newPlayers
+    _ <- mapM (\p -> atomically $ writeTQueue playerQueue p) newPlayers
     atomically $ writeTQueue output (trace (show inst') inst')
     return inst'
 

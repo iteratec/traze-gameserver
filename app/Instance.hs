@@ -11,8 +11,6 @@ import Data.List
 import Data.UUID
 import System.Random
 
-import Control.Monad (liftM)
-
 type Session        = UUID
 type InstanceName   = String
 type Nick           = String
@@ -52,7 +50,7 @@ runInstance inst @ (Instance grid instanceName players) interactions = do
 
 spawnPlayerOnInstance :: Instance -> Interaction -> IO (Instance, Maybe Player)
 spawnPlayerOnInstance inst (GridCommand _ _) = return (inst, Nothing)
-spawnPlayerOnInstance inst @ (Instance grid instanceName players) (JoinRequest mqttClientname nick) = do
+spawnPlayerOnInstance inst @ (Instance grid instanceName players) (JoinRequest _ nick) = do
   let (grid', maybeBike) = spawnPlayer grid
   if isJust maybeBike then do
     let pid = GameTypes.unPlayerId $ fromJust maybeBike

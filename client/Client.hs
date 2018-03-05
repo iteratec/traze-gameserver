@@ -24,7 +24,6 @@ import qualified Data.ByteString as BS
 
 import Data.String.Conversions
 
-import Control.Applicative
 import Options
 
 data ClientOptions = ClientOptions {
@@ -37,7 +36,7 @@ instance Options ClientOptions where
             "Your public ingame nick"
 
 main :: IO ()
-main = runCommand $ \opts args -> do
+main = runCommand $ \opts _ -> do
     config <- getConfig
 
     let playerNick = optPlayerName opts
@@ -63,7 +62,6 @@ inputToMessage sessionVar commandQueue mqttQueue = do
    case (command) of
        (MoveCommand _ m) -> writeTQueue mqttQueue ("traze/1/" ++ (show pid) ++ "/steer", toStrict $ encode (SteerInput (getCourse m) session))
        (Quit _) -> writeTQueue mqttQueue ("traze/1/" ++ (show pid) ++ "/bail", toStrict $ encode (BailInput session))
-       _ -> return ()
 
 getCourse :: Move -> Course
 getCourse (Steer c) = c

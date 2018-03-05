@@ -29,8 +29,8 @@ data MessageType
     | Join InstanceName
 
 -- | publish 
-mqttThread :: TQueue (String, BS.ByteString) -> TQueue Interaction -> TQueue Player -> Config -> IO ()
-mqttThread messageQueue commandQueue playerq config = M.withMosquittoLibrary $ do
+mqttThread :: TQueue (String, BS.ByteString) -> TQueue Interaction -> Config -> IO ()
+mqttThread messageQueue commandQueue config = M.withMosquittoLibrary $ do
     m <- M.newMosquitto True (clientName config) (Just ())
     M.setTls m "" "" ""
     M.setTlsInsecure m True
@@ -108,9 +108,9 @@ writeJoinCommand queue (Just joinInput) = writeTQueue queue (JoinRequest "?" (jo
     
 parseTopic :: String -> Maybe MessageType
 parseTopic top = case (splitOn "/" top) of
-     ("traze" : instName : pid : "steer" : []) -> Just $ Steering instName (read pid)
-     ("traze" : instName : pid : "bail"  : []) -> Just $ Bail instName (read pid)
-     ("traze" : instName : "join" : []) -> Just $ Join instName
+     ("traze" : instN : pid : "steer" : []) -> Just $ Steering instN (read pid)
+     ("traze" : instN : pid : "bail"  : []) -> Just $ Bail instN (read pid)
+     ("traze" : instN : "join" : []) -> Just $ Join instN
      _ -> Nothing
 
 parseSteerInput :: BS.ByteString -> Maybe SteerInput
