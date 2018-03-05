@@ -1,16 +1,15 @@
 module Instance where
 
 import GameTypes
-import GameLogic (play)
+import GameLogic (play, getCommandPlayerId)
 import SpawnQueue
 import SpawnPlayer
+import Colors
 
 import Data.Maybe
 import Data.List
 import Data.UUID
 import System.Random
-
-import Control.Monad (liftM)
 
 type Session        = UUID
 type InstanceName   = String
@@ -34,13 +33,13 @@ data Player = Player {
 } deriving (Show, Eq)
 
 data Interaction 
-  = GridCommand Command
+  = GridCommand Command UUID
   | JoinRequest MqttClientName Nick
 
 -- | runs a round of interactions on a given instance.
 runInstance :: Instance -> [Interaction] -> IO (Instance, [Death], [Player])
 runInstance inst @ (Instance grid instanceName players) interactions = do
-  let commands = map fromJust $ filter isJust $ map commandFromInteraction interactions
+  let commands = map fromJust $ filter isJust $ map (commandFromInteraction inst) interactions
   let (grid', deaths) = play grid commands
   let playersAfterRound = (onGrid players grid')
   let inst' = Instance grid' instanceName playersAfterRound
@@ -50,21 +49,25 @@ runInstance inst @ (Instance grid instanceName players) interactions = do
   return (Instance finalGrid instanceName players', deaths, newPlayers)
 
 spawnPlayerOnInstance :: Instance -> Interaction -> IO (Instance, Maybe Player)
-spawnPlayerOnInstance inst (GridCommand _) = return (inst, Nothing)
-spawnPlayerOnInstance inst @ (Instance grid instanceName players) (JoinRequest mqttClientname nick) = do
+spawnPlayerOnInstance inst (GridCommand _ _) = return (inst, Nothing)
+spawnPlayerOnInstance inst @ (Instance grid instanceName players) (JoinRequest _ nick) = do
   let (grid', maybeBike) = spawnPlayer grid
   if isJust maybeBike then do
     let pid = GameTypes.unPlayerId $ fromJust maybeBike
     let initialPos =  GameTypes.unCurrentLocation $ fromJust maybeBike
     newUUID <- randomIO
-    let newPlayer = Player pid nick 0 0 "#b1147a" newUUID initialPos
+    let newPlayer = Player pid nick 0 0 (trazeColorStrings !! pid) newUUID initialPos
     return $ ((Instance grid' instanceName (newPlayer : players)), Just newPlayer)
   else
     return (inst, Nothing)
 
-commandFromInteraction :: Interaction -> Maybe Command
-commandFromInteraction (GridCommand c)   = Just c
-commandFromInteraction _ = Nothing
+commandFromInteraction :: Instance -> Interaction -> Maybe Command
+commandFromInteraction inst (GridCommand c session) = if isJust player && session == unSession (fromJust player)
+    then Just c
+    else Nothing
+    where pid = getCommandPlayerId c
+          player = getPlayerById inst pid
+commandFromInteraction _ _ = Nothing
 
 chainApply :: (a -> b -> IO (a, Maybe c)) -> a -> [b] -> IO (a, [c])
 chainApply _ a [] = return (a, [])
@@ -76,6 +79,9 @@ chainApply f a (b:bs) = do
 
 onGrid :: [Player] -> Grid -> [Player]
 onGrid ps grid = filter (\p -> (Instance.unPlayerId p) `elem` (map GameTypes.unPlayerId (unBikes grid ++ map unQueueItem (unQueue grid)))) ps
+
+getPlayerById :: Instance -> PlayerId -> Maybe Player
+getPlayerById inst pid = find (\p -> pid == Instance.unPlayerId p) (unPlayer inst)
 
 getDeadPlayerId :: Death -> [PlayerId]
 getDeadPlayerId (Suicide pid)         = [pid]

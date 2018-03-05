@@ -13,6 +13,7 @@ import Control.Concurrent.STM.TQueue
 import Control.Monad
 import Control.Monad.STM
 import Data.Aeson
+import Data.UUID
 import Data.List.Split
 
 import Data.ByteString.Lazy (toStrict, fromStrict)
@@ -28,8 +29,8 @@ data MessageType
     | Join InstanceName
 
 -- | publish 
-mqttThread :: TQueue (String, BS.ByteString) -> TQueue Interaction -> TQueue Player -> Config -> IO ()
-mqttThread messageQueue commandQueue playerq config = M.withMosquittoLibrary $ do
+mqttThread :: TQueue (String, BS.ByteString) -> TQueue Interaction -> Config -> IO ()
+mqttThread messageQueue commandQueue config = M.withMosquittoLibrary $ do
     m <- M.newMosquitto True (clientName config) (Just ())
     M.setTls m "" "" ""
     M.setTlsInsecure m True
@@ -89,11 +90,17 @@ handleMessage queue (Message _ top payl _ _) = case parseTopic top of
 
 writeSteerCommand :: TQueue Interaction -> PlayerId -> Maybe SteerInput -> STM ()
 writeSteerCommand _ _ Nothing = return ()
-writeSteerCommand queue pid (Just stin) = writeTQueue queue $ GridCommand (MoveCommand pid (Steer $ stInCourse stin))
+writeSteerCommand queue pid (Just stin) = case uuid of
+    Just session ->  writeTQueue queue $ GridCommand (MoveCommand pid (Steer $ stInCourse stin)) session
+    Nothing -> return ()
+    where uuid = (Data.UUID.fromString $ stInPlayerToken stin)
 
 writeBailCommand :: TQueue Interaction -> PlayerId -> Maybe BailInput -> STM ()
 writeBailCommand _ _ Nothing = return ()
-writeBailCommand queue pid (Just _) = writeTQueue queue $ GridCommand (Quit pid)
+writeBailCommand queue pid (Just input) = case uuid of
+    Just session -> writeTQueue queue $ GridCommand (Quit pid) session
+    Nothing -> return ()
+    where uuid = (Data.UUID.fromString $ bailPlayerToken input)
 
 writeJoinCommand :: TQueue Interaction -> Maybe JoinInput -> STM()
 writeJoinCommand _ Nothing = return ()
@@ -101,9 +108,9 @@ writeJoinCommand queue (Just joinInput) = writeTQueue queue (JoinRequest "?" (jo
     
 parseTopic :: String -> Maybe MessageType
 parseTopic top = case (splitOn "/" top) of
-     ("traze" : instName : pid : "steer" : []) -> Just $ Steering instName (read pid)
-     ("traze" : instName : pid : "bail"  : []) -> Just $ Bail instName (read pid)
-     ("traze" : instName : "join" : []) -> Just $ Join instName
+     ("traze" : instN : pid : "steer" : []) -> Just $ Steering instN (read pid)
+     ("traze" : instN : pid : "bail"  : []) -> Just $ Bail instN (read pid)
+     ("traze" : instN : "join" : []) -> Just $ Join instN
      _ -> Nothing
 
 parseSteerInput :: BS.ByteString -> Maybe SteerInput
