@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 71f2402449c82caef4856309ac308c6000b7d8f108139cd37d275b81c18764ab
+-- hash: 06803f1e8748ca89caeb904ccc328bc20e544f468da775ae6f17a9845f7c90a1
 
 name:           traze
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
   build-depends:
       aeson >=1.2.3 && <1.3
     , base >=4.7 && <5
+    , colour >=2.3.4 && <2.4
     , random >=1.1 && <1.2
     , text >=1.2 && <2
   exposed-modules:
@@ -58,6 +59,7 @@ executable haskell-client
     , base >=4.7 && <5
     , bytestring >=0.10 && <0.11
     , c-mosquitto >=0.1.2 && <=0.2
+    , colour >=2.3.4 && <2.4
     , monad-loops >=0.4.3
     , options >=1.2.1.1 && <1.3
     , random >=1.1 && <1.2
@@ -69,6 +71,7 @@ executable haskell-client
     , uuid >=1.3 && <1.4
     , yaml-config >=0.4.0 && <0.5
   other-modules:
+      Colors
       Config
       Instance
       Main
@@ -89,6 +92,7 @@ executable traze-exe
     , base >=4.7 && <5
     , bytestring >=0.10 && <0.11
     , c-mosquitto >=0.1.2 && <=0.2
+    , colour >=2.3.4 && <2.4
     , monad-loops >=0.4.3
     , random >=1.1 && <1.2
     , split >=0.2.3 && <0.3
@@ -98,6 +102,7 @@ executable traze-exe
     , uuid >=1.3 && <1.4
     , yaml-config >=0.4.0 && <0.5
   other-modules:
+      Colors
       Config
       Instance
       Mqtt
@@ -116,6 +121,7 @@ test-suite traze-test
     , QuickCheck >=2.10 && <3
     , aeson >=1.2.3 && <1.3
     , base >=4.7 && <5
+    , colour >=2.3.4 && <2.4
     , hspec >=2.4 && <3
     , random >=1.1 && <1.2
     , text >=1.2 && <2

@@ -4,6 +4,7 @@ import GameTypes
 import GameLogic (play, getCommandPlayerId)
 import SpawnQueue
 import SpawnPlayer
+import Colors
 
 import Data.Maybe
 import Data.List
@@ -57,7 +58,7 @@ spawnPlayerOnInstance inst @ (Instance grid instanceName players) (JoinRequest m
     let pid = GameTypes.unPlayerId $ fromJust maybeBike
     let initialPos =  GameTypes.unCurrentLocation $ fromJust maybeBike
     newUUID <- randomIO
-    let newPlayer = Player pid nick 0 0 "#b1147a" newUUID initialPos
+    let newPlayer = Player pid nick 0 0 (trazeColorStrings !! pid) newUUID initialPos
     return $ ((Instance grid' instanceName (newPlayer : players)), Just newPlayer)
   else
     return (inst, Nothing)
