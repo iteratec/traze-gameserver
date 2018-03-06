@@ -2,9 +2,9 @@ module Client where
 
 import GameTypes
 import Output
-import Config
 
-import Data.Aeson (encode, decode)
+import Data.Aeson
+import Data.List.Split
 
 import System.IO
 
@@ -15,7 +15,7 @@ import Control.Concurrent.STM.TMVar
 
 import Control.Monad
 import Control.Monad.STM
-import Debug.Trace
+import System.Exit
 import Data.ByteString.Lazy (toStrict, fromStrict)
 
 import qualified Network.Mosquitto as M
@@ -27,18 +27,24 @@ import Data.String.Conversions
 import Options
 
 data ClientOptions = ClientOptions {
-    optPlayerName :: String
+    optPlayerName :: String,
+    optBrokerHost :: String,
+    optBrokerPort :: Int
 } deriving (Show, Eq)
 
-instance Options ClientOptions where
+instance Options.Options ClientOptions where
     defineOptions = pure ClientOptions
-        <*> simpleOption "Nick" "guest"
+        <*> simpleOption "nick" "guest"
             "Your public ingame nick"
+        <*> simpleOption "broker" "sandbox.hh.iteratec.de"
+            "The MQTT broker hostname hosting the traze game"
+        <*> simpleOption "port" 1883
+            "The port to connect to the MQTT broker on" 
+
+data ClientMessageType = JoinAcceptance | TickerMessage 
 
 main :: IO ()
 main = runCommand $ \opts _ -> do
-    config <- getConfig
-
     let playerNick = optPlayerName opts
 
     localInputQueue <- atomically $ newTQueue
@@ -46,22 +52,23 @@ main = runCommand $ \opts _ -> do
 
     sessionVar <- atomically $ newEmptyTMVar
 
-    _ <- forkIO $ clientMqttThread sessionVar mqttQueue config playerNick
+    _ <- forkIO $ clientMqttThread sessionVar mqttQueue opts playerNick
 
-    _ <- forkIO $ forever $ atomically $ inputToMessage sessionVar localInputQueue mqttQueue
+    _ <- forkIO $ forever $ inputToMessage sessionVar localInputQueue mqttQueue
 
     inputProcess <- async $ forever $ inputThread localInputQueue
 
     _ <- wait inputProcess
     return ()
 
-inputToMessage :: TMVar (Int, String) -> TQueue Command -> TQueue (String, BS.ByteString) -> STM ()
+inputToMessage :: TMVar (Int, String) -> TQueue Command -> TQueue (String, BS.ByteString) -> IO ()
 inputToMessage sessionVar commandQueue mqttQueue = do
-   (pid, session) <- readTMVar sessionVar
-   command <- readTQueue commandQueue
+   (pid, session) <- atomically $ readTMVar sessionVar
+   command <- atomically $ readTQueue commandQueue
+   putStrLn $ "sending command: " ++ (charFromCommand command) : []
    case (command) of
-       (MoveCommand _ m) -> writeTQueue mqttQueue ("traze/1/" ++ (show pid) ++ "/steer", toStrict $ encode (SteerInput (getCourse m) session))
-       (Quit _) -> writeTQueue mqttQueue ("traze/1/" ++ (show pid) ++ "/bail", toStrict $ encode (BailInput session))
+       (MoveCommand _ m) -> atomically $ writeTQueue mqttQueue ("traze/1/" ++ (show pid) ++ "/steer", toStrict $ encode (SteerInput (getCourse m) session))
+       (Quit _) -> atomically $ writeTQueue mqttQueue ("traze/1/" ++ (show pid) ++ "/bail", toStrict $ encode (BailInput session))
 
 getCourse :: Move -> Course
 getCourse (Steer c) = c
@@ -77,13 +84,22 @@ commandFromChar (Just c)
     | c == 'q' = Just $ Quit 1
     | otherwise = Nothing
 
+charFromCommand :: Command -> Char
+charFromCommand (MoveCommand _ (Steer N)) = 'N'
+charFromCommand (MoveCommand _ (Steer W)) = 'W'
+charFromCommand (MoveCommand _ (Steer S)) = 'S'
+charFromCommand (MoveCommand _ (Steer E)) = 'E'
+charFromCommand (MoveCommand _ Straight)  = ' '
+charFromCommand (Quit _) = 'Q'
+
 -- Reads a char from stdin and writes a command accordingly into the input queue
 inputThread :: TQueue Command -> IO ()
 inputThread queue = do
     char <- getInput
     case command char of
         Nothing -> return ()
-        Just c -> atomically $ trace (show c) $ writeTQueue queue c
+        Just c -> do 
+            atomically $ writeTQueue queue c
 
         where command :: Char -> Maybe Command
               command c = commandFromChar $ Just c
@@ -93,24 +109,25 @@ getInput = hSetEcho stdin False
     >> hSetBuffering stdin NoBuffering
     >> getChar
 
-clientMqttThread :: TMVar (Int, String) -> TQueue (String, BS.ByteString) -> Config -> String -> IO ()
-clientMqttThread sessionVar gridQueue config nick = M.withMosquittoLibrary $ do
+clientMqttThread :: TMVar (Int, String) -> TQueue (String, BS.ByteString) -> ClientOptions -> String -> IO ()
+clientMqttThread sessionVar gridQueue opts nick = M.withMosquittoLibrary $ do
     m <- M.newMosquitto True nick (Just ())
     M.setTls m "" "" ""
     M.setTlsInsecure m True
     _ <- M.setReconnectDelay m True 2 30
-    M.onLog m $ const putStrLn
+    --M.onLog m $ const putStrLn
     M.onConnect m $ \c -> do
         putStrLn "connected to broker"
         print c
         M.subscribe m 0 ("traze/1/player/" ++ nick)
+        M.subscribe m 0 ("traze/1/ticker")
         M.publish m False 0 "traze/1/join" $ toStrict $ encode $ JoinInput nick
 
     M.onMessage m (handleMessage sessionVar)
 
     M.onDisconnect m print
-    M.onSubscribe m $ curry print
-    _ <- M.connect m (brokerHost config) (brokerPort config) 1200
+    --M.onSubscribe m $ curry print
+    _ <- M.connect m (optBrokerHost opts) (optBrokerPort opts) 1200
 
     _ <- forkIO $ forever $ do
         (top, message) <- atomically $ readTQueue gridQueue
@@ -122,9 +139,28 @@ clientMqttThread sessionVar gridQueue config nick = M.withMosquittoLibrary $ do
 
 handleMessage :: TMVar (Int, String) -> Message -> IO ()
 handleMessage mvar (Message _ top payl _ _) = do
-    case decode $ fromStrict payl of
-        Just (AcceptJoinRequestOutput pid _ session _ pos) -> do
-            putStrLn ("spawned with pid " ++ (show pid) ++ " at position " ++ (show pos))
-            atomically $ putTMVar mvar (pid, session)
-        Nothing ->
-            putStrLn ("received unexpected message with topic: " ++ top ++ " and payload: " ++ (cs payl))
+    case (parseTopic top) of
+        Just (JoinAcceptance) -> do 
+            case decode $ fromStrict payl of
+                Just (AcceptJoinRequestOutput pid _ session _ pos) -> do
+                    putStrLn ("spawned with pid " ++ (show pid) ++ " at position " ++ (show pos))
+                    putStrLn "steer your bike with w, a, s, d. Press q to bail."
+                    atomically $ putTMVar mvar (pid, session)
+                Nothing -> return ()
+        Just (TickerMessage) -> do
+            case decode $ fromStrict payl of
+                Just (DeathTick _ casulty fragger) -> do
+                    (pid, _) <- atomically $ readTMVar mvar
+                    when (casulty == pid) $ do
+                        putStrLn("you died.")
+                        exitWith ExitSuccess
+                    when (fragger == pid) (putStrLn "you fragged. Keep doing that.")
+                Nothing -> return ()
+        Nothing -> putStrLn ("received unexpected message with topic: " ++ top ++ " and payload: " ++ (cs payl))
+
+ 
+parseTopic :: String -> Maybe ClientMessageType
+parseTopic top = case (splitOn "/" top) of
+     ("traze" : _ : "player" : _ : []) -> Just $ JoinAcceptance
+     ("traze" : _ : "ticker"  : []) -> Just $ TickerMessage
+     _ -> Nothing
