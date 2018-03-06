@@ -42,8 +42,8 @@ instance FromJSON OutputBike where
 type Tick = DeathTick
 data DeathTick = DeathTick {
     deTiType :: String,
-    deTiCasualty :: PlayerId,
-    deTiFragger :: PlayerId
+    deTiFragger :: PlayerId,
+    deTiCasualty :: PlayerId
 } deriving (Generic, Show, Eq)
 
 instance ToJSON DeathTick where
@@ -115,7 +115,7 @@ instance FromJSON InstancesOutput where
       fieldLabelModifier = modifyName}
 
 data PlayerOutput = PlayerOutput{
-    plOuId :: String,
+    plOuId :: Int,
     plOuName :: String,
     plOuColor :: String,
     plOuFrags :: Int,
@@ -143,7 +143,7 @@ playerToAcceptJoinRequestOutput (Player pid name _ _ color session pos) =
 
 instanceToPlayersOutput :: Instance -> [PlayerOutput]
 instanceToPlayersOutput inst = map i2pl (unPlayer inst)
-    where i2pl (Player pid name frags deaths color _ _) = PlayerOutput (show pid) name color frags deaths
+    where i2pl (Player pid name frags deaths color _ _) = PlayerOutput pid name color frags deaths
 
 getTiles :: Grid -> [[Int]]
 getTiles g = (map . map) (getPosPlayerId gridBikes) (getGridCoords gs)
