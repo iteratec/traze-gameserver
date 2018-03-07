@@ -28,7 +28,7 @@ scoreAndCord :: Grid -> Coordinate -> (Int, Coordinate)
 scoreAndCord g c = (spawnScore g c, c)
 
 spawnScore :: Grid -> Coordinate -> Int
-spawnScore g c = (awayFromAnyBike g c) + (awayFromWalls g c)
+spawnScore g c = (awayFromAnyBike g c) + 2 * (awayFromWalls g c)
 
 allFreeCoords :: Grid -> [Coordinate]
 allFreeCoords (Grid gs bs q) = filter (not . (flip elem $ allBikeTrailCords bs ++ queuedCoords)) (allCoords gs)
@@ -56,5 +56,10 @@ awayFromBike b c = round squareRoot
             tupleMap (+) c (unCurrentLocation b)
 
 awayFromWalls :: Grid -> Coordinate -> Int
-awayFromWalls (Grid gs _ _) c = tupleFold min $ tupleMap (-) gs c
+awayFromWalls (Grid (maxX, maxY) _ _) (x,y) = min (afwSingleAxis maxX x) (afwSingleAxis maxY y)
 
+afwSingleAxis :: Int -> Int -> Int
+afwSingleAxis max x 
+  | x <  (max `div` 2) = x + 1
+  | x == (max `div` 2) = x + (max `mod` 2)
+  | x >  (max `div` 2) = max - x

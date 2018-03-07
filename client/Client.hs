@@ -149,7 +149,7 @@ handleMessage mvar (Message _ top payl _ _) = do
                 Nothing -> return ()
         Just (TickerMessage) -> do
             case decode $ fromStrict payl of
-                Just (DeathTick _ casulty fragger) -> do
+                Just (DeathTick _ fragger casulty) -> do
                     (pid, _) <- atomically $ readTMVar mvar
                     when (casulty == pid) $ do
                         putStrLn("you died.")
