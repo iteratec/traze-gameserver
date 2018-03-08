@@ -28,7 +28,8 @@ scoreAndCord :: Grid -> Coordinate -> (Int, Coordinate)
 scoreAndCord g c = (spawnScore g c, c)
 
 spawnScore :: Grid -> Coordinate -> Int
-spawnScore g c = (awayFromAnyBike g c) + (awayFromWalls g c)
+spawnScore g c = ((awayFromWalls g c) `div` 2) + (awayFromTrails g c)
+--spawnScore g c = (awayFromTrails g c)
 
 allFreeCoords :: Grid -> [Coordinate]
 allFreeCoords (Grid gs bs q) = filter (not . (flip elem $ allBikeTrailCords bs ++ queuedCoords)) (allCoords gs)
@@ -44,8 +45,15 @@ awayFromAnyBike :: Grid -> Coordinate -> Int
 awayFromAnyBike (Grid _ [] _) _ = 0
 awayFromAnyBike (Grid _ bs _) c = minimum $ map (flip awayFromBike c) bs
 
+awayFromTrails :: Grid -> Coordinate -> Int
+awayFromTrails (Grid _ [] _) _ = 0
+awayFromTrails (Grid _ bs _) c = awayFromCoordinates c $ concatMap unTrail $ bs 
+
 awayFromBike :: Bike -> Coordinate -> Int
-awayFromBike b c = round squareRoot
+awayFromBike b c = awayFromCoordinate (unCurrentLocation b) c
+
+awayFromCoordinate :: Coordinate -> Coordinate -> Int
+awayFromCoordinate other this = round squareRoot
     where
         squareRoot :: Double
         squareRoot  = sqrt $
@@ -53,8 +61,16 @@ awayFromBike b c = round squareRoot
             tupleDo fromIntegral $
             tupleDo ((flip (^)) (2 :: Int)) $
             tupleDo abs $
-            tupleMap (+) c (unCurrentLocation b)
+            tupleMap (-) other this
 
 awayFromWalls :: Grid -> Coordinate -> Int
-awayFromWalls (Grid gs _ _) c = tupleFold min $ tupleMap (-) gs c
+awayFromWalls (Grid (maxX, maxY) _ _) (x,y) = min (afwSingleAxis maxX x) (afwSingleAxis maxY y)
 
+awayFromCoordinates :: Coordinate -> [Coordinate] -> Int
+awayFromCoordinates c cs = minimum $ map (awayFromCoordinate c) cs
+
+afwSingleAxis :: Int -> Int -> Int
+afwSingleAxis max x 
+  | x <  (max `div` 2) = x + 1
+  | x == (max `div` 2) = x + (max `mod` 2)
+  | x >  (max `div` 2) = max - x
