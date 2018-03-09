@@ -78,7 +78,8 @@ instance FromJSON BailInput where
       fieldLabelModifier = modifyName}
 
 data JoinInput = JoinInput {
-    joInName :: String
+    joInName :: String,
+    joInMqttClientName :: String
 } deriving (Generic, Show, Eq)
 
 instance ToJSON JoinInput where
@@ -139,12 +140,12 @@ gridToGameState g =
     where (Grid (maxX, maxY) gridBikes queue) = g
 
 playerToAcceptJoinRequestOutput :: Player -> AcceptJoinRequestOutput
-playerToAcceptJoinRequestOutput (Player pid name _ _ color session pos) = 
+playerToAcceptJoinRequestOutput (Player pid name _ _ color session _ pos) = 
     AcceptJoinRequestOutput pid name (toString session) color pos
 
 instanceToPlayersOutput :: Instance -> [PlayerOutput]
 instanceToPlayersOutput inst = map i2pl (unPlayer inst)
-    where i2pl (Player pid name frags deaths color _ _) = PlayerOutput pid name color frags deaths
+    where i2pl (Player pid name frags deaths color _ _ _) = PlayerOutput pid name color frags deaths
 
 getTiles :: Grid -> [[Int]]
 getTiles g = (map . map) (getPosPlayerId gridBikes) (getGridCoords gs)

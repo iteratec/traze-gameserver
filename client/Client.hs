@@ -4,9 +4,12 @@ import GameTypes
 import Output
 
 import Data.Aeson
+import Data.UUID
 import Data.List.Split
 
+import System.Exit
 import System.IO
+import System.Random
 
 import Control.Concurrent
 import Control.Concurrent.Async
@@ -15,7 +18,6 @@ import Control.Concurrent.STM.TMVar
 
 import Control.Monad
 import Control.Monad.STM
-import System.Exit
 import Data.ByteString.Lazy (toStrict, fromStrict)
 
 import qualified Network.Mosquitto as M
@@ -111,17 +113,18 @@ getInput = hSetEcho stdin False
 
 clientMqttThread :: TMVar (Int, String) -> TQueue (String, BS.ByteString) -> ClientOptions -> String -> IO ()
 clientMqttThread sessionVar gridQueue opts nick = M.withMosquittoLibrary $ do
-    m <- M.newMosquitto True nick (Just ())
+    mqttClientName <- randomIO 
+    m <- M.newMosquitto True (toString mqttClientName) (Just ())
     M.setTls m "" $ Just ("", "")
     M.setTlsInsecure m True
     _ <- M.setReconnectDelay m True 2 30
     --M.onLog m $ const putStrLn
     M.onConnect m $ \c -> do
-        putStrLn "connected to broker"
+        putStrLn $ "connected to broker as " ++ (toString mqttClientName)
         print c
-        M.subscribe m 0 ("traze/1/player/" ++ nick)
+        M.subscribe m 0 ("traze/1/player/" ++ (toString mqttClientName))
         M.subscribe m 0 ("traze/1/ticker")
-        M.publish m False 0 "traze/1/join" $ toStrict $ encode $ JoinInput nick
+        M.publish m False 0 "traze/1/join" $ toStrict $ encode $ JoinInput (toString mqttClientName) nick
 
     M.onMessage m (handleMessage sessionVar)
 
