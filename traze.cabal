@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 06803f1e8748ca89caeb904ccc328bc20e544f468da775ae6f17a9845f7c90a1
+-- hash: 6be6c8f1861512abb6acdd98b8af520eed27e20826de130bccc8c26f270c9ad6
 
 name:           traze
 version:        0.1.0.0
@@ -58,7 +58,7 @@ executable haskell-client
     , async >=2.0.1.5
     , base >=4.7 && <5
     , bytestring >=0.10 && <0.11
-    , c-mosquitto >=0.1.2 && <=0.2
+    , c-mosquitto >=0.2.2 && <=0.3
     , colour >=2.3.4 && <2.4
     , monad-loops >=0.4.3
     , options >=1.2.1.1 && <1.3
@@ -91,7 +91,7 @@ executable traze-exe
     , async >=2.0.1.5
     , base >=4.7 && <5
     , bytestring >=0.10 && <0.11
-    , c-mosquitto >=0.1.2 && <=0.2
+    , c-mosquitto >=0.2.2 && <=0.3
     , colour >=2.3.4 && <2.4
     , monad-loops >=0.4.3
     , random >=1.1 && <1.2
