@@ -6,5 +6,8 @@
 mqtt:
     brokerHost: "localhost"
     brokerPort: 1883
+    brokerUserName: "trazeHaskellGameserver"
+    brokerPassword: "XeghahNoo2lie0sioB4o"
     clientName: "traze-server"
+
 

@@ -32,7 +32,8 @@ data MessageType
 mqttThread :: TQueue (String, BS.ByteString) -> TQueue Interaction -> Config -> IO ()
 mqttThread messageQueue commandQueue config = M.withMosquittoLibrary $ do
     m <- M.newMosquitto True (clientName config) (Just ())
-    M.setTls m "" "" ""
+    M.setTls m "" $ Just ("", "")
+    _ <- M.setUsernamePassword m $ Just (brokerUser config, brokerPassword config)
     M.setTlsInsecure m True
     _ <- M.setReconnectDelay m True 2 30
     M.onMessage m (atomically . (handleMessage commandQueue))

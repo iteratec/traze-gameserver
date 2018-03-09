@@ -41,7 +41,8 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps: 
   - stm-2.4.5.0
-  - c-mosquitto-0.1.2.0
+  - git: git@github.com:sztupi/c-mosquitto.git
+    commit: 789f5bedb4a042be3fcd8b33fec8a719b53b65c2
   - yaml-config-0.4.0
 
 # Override default flag values for local packages and extra-deps

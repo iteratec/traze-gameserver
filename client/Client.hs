@@ -112,7 +112,7 @@ getInput = hSetEcho stdin False
 clientMqttThread :: TMVar (Int, String) -> TQueue (String, BS.ByteString) -> ClientOptions -> String -> IO ()
 clientMqttThread sessionVar gridQueue opts nick = M.withMosquittoLibrary $ do
     m <- M.newMosquitto True nick (Just ())
-    M.setTls m "" "" ""
+    M.setTls m "" $ Just ("", "")
     M.setTlsInsecure m True
     _ <- M.setReconnectDelay m True 2 30
     --M.onLog m $ const putStrLn
