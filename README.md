@@ -88,11 +88,13 @@ You send a request to join the game. In return you'll get a user token that allo
 `/traze/{instanceName}/join`
 ```json
 "name": "myIngameNick"
+"mqttClientName": "myClientName"
 ```
 
 If the server accepts your request you'll receive a message communicating your initial position. Once you give your first direction command your game starts.
+You have to provide a unique MQTT client name in order to receive your session token on your clients own topic. In order to not be subject to a MQTT deauthentication attack you should choose a client name that can not be guessed. UUIDs are a good solution.
 
-`traze/{instanceName}/player/{myIngameNick}`
+`traze/{instanceName}/player/{myClientName}`
 ```json
 {
     "id": 1337,

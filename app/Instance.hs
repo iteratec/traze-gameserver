@@ -29,6 +29,7 @@ data Player = Player {
   unDeaths       :: Int,
   unColor        :: String,
   unSession      :: Session,
+  unMqttClientName :: String,
   unInitPosition :: Coordinate
 } deriving (Show, Eq)
 
@@ -50,13 +51,13 @@ runInstance inst @ (Instance grid instanceName players) interactions = do
 
 spawnPlayerOnInstance :: Instance -> Interaction -> IO (Instance, Maybe Player)
 spawnPlayerOnInstance inst (GridCommand _ _) = return (inst, Nothing)
-spawnPlayerOnInstance inst @ (Instance grid instanceName players) (JoinRequest _ nick) = do
+spawnPlayerOnInstance inst @ (Instance grid instanceName players) (JoinRequest mqttName nick) = do
   let (grid', maybeBike) = spawnPlayer grid
   if isJust maybeBike then do
     let pid = GameTypes.unPlayerId $ fromJust maybeBike
     let initialPos =  GameTypes.unCurrentLocation $ fromJust maybeBike
     newUUID <- randomIO
-    let newPlayer = Player pid nick 0 0 (trazeColorStrings !! pid) newUUID initialPos
+    let newPlayer = Player pid nick 0 0 (trazeColorStrings !! pid) newUUID mqttName initialPos
     return $ ((Instance grid' instanceName (newPlayer : players)), Just newPlayer)
   else
     return (inst, Nothing)

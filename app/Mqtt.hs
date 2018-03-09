@@ -79,7 +79,7 @@ castInstanceThread input output = do
 castNewPlayerThread :: TQueue Player -> TQueue (String, BS.ByteString) -> STM ()
 castNewPlayerThread input output = do
     newP <- readTQueue input
-    let message = (\p -> ("traze/1/player/"++ (unPlayerName p) ++ "\0", toStrict $ encode $ playerToAcceptJoinRequestOutput p)) newP
+    let message = (\p -> ("traze/1/player/"++ (unMqttClientName p) ++ "\0", toStrict $ encode $ playerToAcceptJoinRequestOutput p)) newP
     writeTQueue output message
 
 handleMessage :: TQueue Interaction -> Message -> STM ()
@@ -105,7 +105,7 @@ writeBailCommand queue pid (Just input) = case uuid of
 
 writeJoinCommand :: TQueue Interaction -> Maybe JoinInput -> STM()
 writeJoinCommand _ Nothing = return ()
-writeJoinCommand queue (Just joinInput) = writeTQueue queue (JoinRequest "?" (joInName joinInput))
+writeJoinCommand queue (Just joinInput) = writeTQueue queue (JoinRequest (joInName joinInput) (joInMqttClientName joinInput))
     
 parseTopic :: String -> Maybe MessageType
 parseTopic top = case (splitOn "/" top) of
@@ -123,24 +123,4 @@ parseBailInput bs = decode $ fromStrict bs
 parseJoinInput :: BS.ByteString -> Maybe JoinInput
 parseJoinInput bs = decode $ fromStrict bs
 
-castTickerThread :: TQueue Death -> IO ()
-castTickerThread = undefined
 
-castPlayersThread :: TQueue Instance -> IO ()
-castPlayersThread = undefined
-
--- connectToBroker :: Config ->
-
--- | broadcasts the current game state over MQTT
-castGameState :: Grid -- the current game state
-              -> IO ()
-castGameState = undefined
-
--- | broadcasts the current list of players playing on a given instance
-castPlayers :: Instance
-            -> IO ()
-castPlayers = undefined
-
-castTicker :: Death
-           -> IO ()
-castTicker = undefined
