@@ -86,6 +86,19 @@ main = hspec $ do
         it "both go straight, reaching the same sqare at the same time" $ do
             play grid3 [] `shouldBe` (Grid (3,3) [] [], [Suicide 1, Suicide 2])
 
+    describe "hasCollided" $ do
+        it "non colliding bikes" $ do
+            hasCollided (Bike 1 N (1,1) []) [(Bike 1 N (1,1) []), (Bike 2 N (1,2) [])] `shouldBe` False
+        it "colliding bikes" $ do
+            hasCollided (Bike 1 N (1,1) []) [(Bike 1 N (1,1) []), (Bike 2 N (1,1) [])] `shouldBe` True
+
+    describe "filterCollisions" $ do
+        it "no colliding Bikes" $ do
+            filterCollisions [(Bike 1 N (1,1) []), (Bike 2 N (1,2) [])] `shouldBe` ([(Bike 1 N (1,1) []), (Bike 2 N (1,2) [])], [])
+        it "two colliding Bikes" $ do
+            filterCollisions [(Bike 1 N (1,2) []), (Bike 2 N (1,2) [])] `shouldBe` ([], [(Suicide 1), (Suicide 2)])
+
+
 
     describe "spawn player" $ do
         it "spawn second player on grid" $ do

@@ -14,8 +14,9 @@ import GHC.Exts (groupWith, sortWith)
 play :: Grid           -- ^ The current game state
     -> [Command]       -- ^ The list of commands given by the players for this turn
     -> (Grid, [Death]) -- ^ The resulting game state, the list of deaths resulting from this turn
-play g cs = ((Grid (unGridSize g) bikes' queue'), deaths)
-    where bikes' = rights $ executedCommands
+play g cs = ((Grid (unGridSize g) bikes'' queue'), deaths ++ collisionSuicides)
+    where (bikes'', collisionSuicides) = filterCollisions bikes'
+          bikes' = rights $ executedCommands
           deaths = lefts $ executedCommands
           executedCommands = map (execCommand g) $ 
               map (addStraightCommands cs) ((unBikes g) ++ joinedBikes)
@@ -31,6 +32,16 @@ popFromQueue qs cs = (queue', bikes)
           hasCommand coms b = (unPlayerId b) `elem` (map getCommandPlayerId coms)
           findPlayerIdInQueue :: [Bike] -> QueueItem Bike -> Bool
           findPlayerIdInQueue bs item = (unPlayerId (unQueueItem item)) `elem` (map unPlayerId bs)
+
+filterCollisions :: [Bike] -> ([Bike], [Death])
+filterCollisions bs = (bikes', deaths)
+    where collidedBikes = filter (\b -> hasCollided b bs) bs
+          bikes' = filter (\b -> not $ b `elem` collidedBikes) bs 
+          deaths = map (\b -> Suicide $ unPlayerId b) collidedBikes
+
+hasCollided :: Bike -> [Bike] -> Bool
+hasCollided (Bike pid _ loc _) bs = length (filter (\(Bike otherPid _ otherLoc _) -> pid /= otherPid && loc == otherLoc) bs) > 0
+
 
 -- make sure all bikes on the grid go straight if no command given
 addStraightCommands :: [Command] -> Bike -> Command
