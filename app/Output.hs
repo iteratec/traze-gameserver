@@ -18,7 +18,8 @@ data GameState = GameState {
     height :: Int,
     width :: Int,
     tiles :: [[Int]],
-    bikes :: [OutputBike]
+    bikes :: [OutputBike],
+    spawns :: [Coordinate]
 } deriving (Generic, Show, Eq)
 
 instance ToJSON GameState where
@@ -134,8 +135,8 @@ modifyName input = ((toLower . head . drop 4) input) : (drop 5 input)
 
 gridToGameState :: Grid -> GameState
 gridToGameState g =
-    GameState maxY maxX (getTiles g) (map getOutputBike gridBikes)
-    where (Grid (maxX, maxY) gridBikes _) = g
+    GameState maxY maxX (getTiles g) (map getOutputBike gridBikes) (map (unCurrentLocation . unQueueItem) queue)
+    where (Grid (maxX, maxY) gridBikes queue) = g
 
 playerToAcceptJoinRequestOutput :: Player -> AcceptJoinRequestOutput
 playerToAcceptJoinRequestOutput (Player pid name _ _ color session pos) = 

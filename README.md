@@ -41,7 +41,8 @@ If you want to write an ai pilot you can do so by parsing the MQTT repersentatio
         "direction":"W",
         "trail":[[2,0],[2,1]]
         }
-   ]
+   ],
+   "spawns":[[2,2]]
 }
 ```
 
@@ -77,11 +78,7 @@ Finally there is a ticker topic that informs about frags that occoured on a give
   "fragger": 4
 }
 ```
-
-#### Web UI
-You can stream the UI onto your own web enabled device.
-
-TBD.
+The types are of `frag`, `collision`, `suicide`.
 
 ### Play the game
 
@@ -90,20 +87,21 @@ You send a request to join the game. In return you'll get a user token that allo
 
 `/traze/{instanceName}/join`
 ```json
-"name": "yourFancyPublicUserHandle"
+"name": "myIngameNick"
 ```
 
 If the server accepts your request you'll receive a message communicating your initial position. Once you give your first direction command your game starts.
 
-`traze/{instanceName}/player/{playerName}`
+`traze/{instanceName}/player/{myIngameNick}`
 ```json
 {
     "id": 1337,
-    "name": "yourFancyPublicUserHandle",
-    "secretUserToken":"",
+    "name": "myIngameNick",
+    "secretUserToken":"de37c1bc-d0e6-4c66-aaa3-911511f43d54",
     "position": [15,3]
 }
 ```
+Because the ingame nick is part of the topic your nickname may not include `#`, `+`, `/`.
 
 #### Steering your Light Cycle
 You steer by giving the directions for your next turn via an MQTT message. If you don't commit a course correction within the specified timeframe your light cycle will continue on it's previous path.
@@ -112,7 +110,7 @@ You steer by giving the directions for your next turn via an MQTT message. If yo
 ```json
 {
     "course":"N",
-    "playerToken": "yourSecretToken"
+    "playerToken": "de37c1bc-d0e6-4c66-aaa3-911511f43d54"
 }
 ```
 
