@@ -10,7 +10,7 @@ unQueueItem :: QueueItem a -> a
 unQueueItem (QueueItem _ b) = b
 
 ttl :: TimeToLive
-ttl = 15
+ttl = 40
 
 enQueue :: a -> QueueItem a
 enQueue a = QueueItem ttl a
