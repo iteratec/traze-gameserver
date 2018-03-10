@@ -35,6 +35,7 @@ mqttThread messageQueue commandQueue config = M.withMosquittoLibrary $ do
     M.setTls m "" $ Just ("", "")
     _ <- M.setUsernamePassword m $ Just (brokerUser config, brokerPassword config)
     M.setTlsInsecure m True
+    --M.onLog m $ const putStrLn
     _ <- M.setReconnectDelay m True 2 30
     M.onMessage m (atomically . (handleMessage commandQueue))
     M.onLog m $ const putStrLn
@@ -122,5 +123,4 @@ parseBailInput bs = decode $ fromStrict bs
 
 parseJoinInput :: BS.ByteString -> Maybe JoinInput
 parseJoinInput bs = decode $ fromStrict bs
-
 
