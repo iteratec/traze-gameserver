@@ -118,13 +118,13 @@ clientMqttThread sessionVar gridQueue opts nick = M.withMosquittoLibrary $ do
     M.setTls m "" $ Just ("", "")
     M.setTlsInsecure m True
     _ <- M.setReconnectDelay m True 2 30
-    --M.onLog m $ const putStrLn
-    M.onConnect m $ \c -> do
-        putStrLn $ "connected to broker as " ++ (toString mqttClientName)
-        print c
-        M.subscribe m 0 ("traze/1/player/" ++ (toString mqttClientName))
-        M.subscribe m 0 ("traze/1/ticker")
-        M.publish m False 0 "traze/1/join" $ toStrict $ encode $ JoinInput (toString mqttClientName) nick
+    -- M.onLog m $ const putStrLn
+    M.onConnect m $ \_ -> do
+        putStrLn $ "connected to broker as " ++ (toString mqttClientName) ++ "\0"
+        M.subscribe m 0 ("traze/1/player/" ++ (toString mqttClientName) ++ "\0")
+        M.subscribe m 0 ("traze/1/ticker\0")
+        M.publish m False 0 "traze/1/join\0" $ toStrict $ encode $ JoinInput nick (toString mqttClientName)
+        putStrLn $ "sent join request as " ++ nick ++ ". waiting for server response"
 
     M.onMessage m (handleMessage sessionVar)
 

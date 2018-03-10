@@ -35,7 +35,7 @@ data Player = Player {
 
 data Interaction 
   = GridCommand Command UUID
-  | JoinRequest MqttClientName Nick
+  | JoinRequest Nick MqttClientName
 
 -- | runs a round of interactions on a given instance.
 runInstance :: Instance -> [Interaction] -> IO (Instance, [Death], [Player])
@@ -51,7 +51,7 @@ runInstance inst @ (Instance grid instanceName players) interactions = do
 
 spawnPlayerOnInstance :: Instance -> Interaction -> IO (Instance, Maybe Player)
 spawnPlayerOnInstance inst (GridCommand _ _) = return (inst, Nothing)
-spawnPlayerOnInstance inst @ (Instance grid instanceName players) (JoinRequest mqttName nick) = do
+spawnPlayerOnInstance inst @ (Instance grid instanceName players) (JoinRequest nick mqttName) = do
   let (grid', maybeBike) = spawnPlayer grid
   if isJust maybeBike then do
     let pid = GameTypes.unPlayerId $ fromJust maybeBike
