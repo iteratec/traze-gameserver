@@ -16,6 +16,8 @@ import Data.Aeson
 import Data.UUID
 import Data.List.Split
 
+import Text.Read
+
 import Data.ByteString.Lazy (toStrict, fromStrict)
 
 import qualified Network.Mosquitto as M
@@ -35,7 +37,7 @@ mqttThread messageQueue commandQueue config = M.withMosquittoLibrary $ do
     M.setTls m "" $ Just ("", "")
     _ <- M.setUsernamePassword m $ Just (brokerUser config, brokerPassword config)
     M.setTlsInsecure m True
-    --M.onLog m $ const putStrLn
+    -- M.onLog m $ const putStrLn
     _ <- M.setReconnectDelay m True 2 30
     M.onMessage m (atomically . (handleMessage commandQueue))
     M.onLog m $ const putStrLn
@@ -110,10 +112,16 @@ writeJoinCommand queue (Just joinInput) = writeTQueue queue (JoinRequest (joInNa
     
 parseTopic :: String -> Maybe MessageType
 parseTopic top = case (splitOn "/" top) of
-     ("traze" : instN : pid : "steer" : []) -> Just $ Steering instN (read pid)
-     ("traze" : instN : pid : "bail"  : []) -> Just $ Bail instN (read pid)
+     ("traze" : instN : pid : "steer" : []) -> getSteering instN (readMaybe pid)
+     ("traze" : instN : pid : "bail"  : []) -> getBail instN (read pid)
      ("traze" : instN : "join" : []) -> Just $ Join instN
      _ -> Nothing
+
+     where getSteering instN (Just pid) = Just $ Steering instN pid
+           getSteering _ Nothing = Nothing
+
+           getBail instN (Just pid) = Just $ Bail instN pid
+           getBail _ Nothing = Nothing
 
 parseSteerInput :: BS.ByteString -> Maybe SteerInput
 parseSteerInput bs = decode $ fromStrict bs
