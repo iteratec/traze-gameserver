@@ -1,9 +1,9 @@
 name:                traze
 version:             0.1.0.0
-github:              "asciijungle/traze"
-license:             BSD3
+github:              "iteratec/traze-gameserver"
+license:             AGPL
 author:              "Benjamin Brunzel"
-maintainer:          "example@example.com"
+maintainer:          "benjamin.brunzel@iteratec.de"
 copyright:           "2017 Benjamin Brunzel"
 
 extra-source-files:
@@ -17,7 +17,7 @@ category:            Game
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on Github at <https://github.com/asciijungle/traze#readme>
+description:         Please see the README on Github at <https://github.com/iteratec/traze-gameserver#readme>
 
 dependencies:
 - base >= 4.7 && < 5
