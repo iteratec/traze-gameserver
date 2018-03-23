@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6be6c8f1861512abb6acdd98b8af520eed27e20826de130bccc8c26f270c9ad6
+-- hash: 88641e7bcf3e2cca471fd7f3fa14b9565503084c59883bd79b3de6d42bce40c5
 
 name:           traze
 version:        0.1.0.0
@@ -14,8 +14,7 @@ bug-reports:    https://github.com/asciijungle/traze/issues
 author:         Benjamin Brunzel
 maintainer:     example@example.com
 copyright:      2017 Benjamin Brunzel
-license:        BSD3
-license-file:   LICENSE
+license:        AGPL
 build-type:     Simple
 cabal-version:  >= 1.10
 

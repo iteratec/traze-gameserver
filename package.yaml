@@ -1,7 +1,7 @@
 name:                traze
 version:             0.1.0.0
 github:              "asciijungle/traze"
-license:             BSD3
+license:             AGPL
 author:              "Benjamin Brunzel"
 maintainer:          "example@example.com"
 copyright:           "2017 Benjamin Brunzel"
