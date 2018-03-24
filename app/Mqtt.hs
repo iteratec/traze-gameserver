@@ -9,16 +9,17 @@ import qualified Data.ByteString as BS
 
 import Control.Concurrent
 import Control.Concurrent.STM.TQueue
-
 import Control.Monad
 import Control.Monad.STM
+
 import Data.Aeson
 import Data.UUID
 import Data.List.Split
+import Data.ByteString.Lazy (toStrict, fromStrict)
 
 import Text.Read
 
-import Data.ByteString.Lazy (toStrict, fromStrict)
+import System.Random
 
 import qualified Network.Mosquitto as M
 import Network.Mosquitto.Internal.Types
@@ -33,7 +34,8 @@ data MessageType
 -- | publish 
 mqttThread :: TQueue (String, BS.ByteString) -> TQueue Interaction -> Config -> IO ()
 mqttThread messageQueue commandQueue config = M.withMosquittoLibrary $ do
-    m <- M.newMosquitto True (clientName config) (Just ())
+    mqttClientName <- randomIO
+    m <- M.newMosquitto True (toString mqttClientName) (Just ())
     M.setTls m "" $ Just ("", "")
     _ <- M.setUsernamePassword m $ Just (brokerUser config, brokerPassword config)
     M.setTlsInsecure m True

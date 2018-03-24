@@ -6,7 +6,6 @@
 mqtt:
     brokerHost: "broker"
     brokerPort: 1883
-    clientName: "e48a96fd-3081-49de-adae-4e090722dff6"
     brokerUserName: "trazeHaskellGameserver"
     brokerPassword: "XeghahNoo2lie0sioB4o"
 

@@ -2,19 +2,20 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 88641e7bcf3e2cca471fd7f3fa14b9565503084c59883bd79b3de6d42bce40c5
+-- hash: 17a7f982019769aa565a66aa63462d8ecdb0fa7e6049122b464f1101f13d9d76
 
 name:           traze
 version:        0.1.0.0
 synopsis:       Tron like mqtt based game server
-description:    Please see the README on Github at <https://github.com/asciijungle/traze#readme>
+description:    Please see the README on Github at <https://github.com/iteratec/traze-gameserver#readme>
 category:       Game
-homepage:       https://github.com/asciijungle/traze#readme
-bug-reports:    https://github.com/asciijungle/traze/issues
+homepage:       https://github.com/iteratec/traze-gameserver#readme
+bug-reports:    https://github.com/iteratec/traze-gameserver/issues
 author:         Benjamin Brunzel
-maintainer:     example@example.com
+maintainer:     benjamin.brunzel@iteratec.de
 copyright:      2017 Benjamin Brunzel
 license:        AGPL
+license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10
 
@@ -24,7 +25,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/asciijungle/traze
+  location: https://github.com/iteratec/traze-gameserver
 
 library
   hs-source-dirs:
