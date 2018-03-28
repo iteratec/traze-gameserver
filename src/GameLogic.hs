@@ -6,6 +6,7 @@ import Tuple
 
 import Data.Either (lefts, rights)
 import Data.List (find)
+import Data.Maybe (fromMaybe)
 
 import GHC.Exts (groupWith, sortWith)
 
@@ -134,4 +135,24 @@ stepCoordinate N = tupleApply (id        , (+1)      )
 stepCoordinate E = tupleApply ((+1)      , id        )
 stepCoordinate W = tupleApply (subtract 1, id        )
 stepCoordinate S = tupleApply (id        , subtract 1)
+
+getTiles :: Grid -> [[Int]]
+getTiles g = (map . map) (getPosPlayerId gridBikes) (getGridCoords gs)
+    where (Grid gs gridBikes _) = g
+
+getPosPlayerId :: [Bike] -> Coordinate -> PlayerId
+getPosPlayerId bs c = fromMaybe 0 $ getFirstJust $ map (getPid c) bs
+
+getPid :: Coordinate -> Bike -> Maybe PlayerId
+getPid c b
+    | c == (unCurrentLocation b) = Just (GameTypes.unPlayerId b)
+    | c `elem` (unTrail b) = Just (GameTypes.unPlayerId b)
+    | otherwise = Nothing
+
+getGridCoords :: GridSize -> [[Coordinate]]
+getGridCoords (maxX, maxY) =
+    map (getLineCoords (maxX, maxY)) $ [0..(maxX-1)]
+
+getLineCoords :: GridSize -> Int -> [Coordinate]
+getLineCoords (maxY,_) x = [(x,y) | y <- [0..(maxY-1)]]
 

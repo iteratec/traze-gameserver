@@ -33,6 +33,8 @@ executables:
   traze-exe:
     main:                Main.hs
     source-dirs:         app
+    exposed-modules: 
+    - Output
     ghc-options:
     - -threaded
     - -rtsopts
@@ -87,3 +89,4 @@ tests:
     - hspec >= 2.4 && < 3
     - HUnit >= 1.6 && < 1.7
     - QuickCheck >= 2.10 && < 3
+

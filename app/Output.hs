@@ -2,12 +2,10 @@
 module Output where
 
 import GameTypes
+import GameLogic
 import SpawnQueue
 import Instance
 
-import Data.Maybe
-import Control.Monad
-import Data.List
 import Data.Char
 import Data.Aeson
 import Data.UUID
@@ -147,55 +145,7 @@ instanceToPlayersOutput :: Instance -> [PlayerOutput]
 instanceToPlayersOutput inst = map i2pl (unPlayer inst)
     where i2pl (Player pid name frags deaths color _ _ _) = PlayerOutput pid name color frags deaths
 
-getTiles :: Grid -> [[Int]]
-getTiles g = (map . map) (getPosPlayerId gridBikes) (getGridCoords gs)
-    where (Grid gs gridBikes _) = g
-
-getPosPlayerId :: [Bike] -> Coordinate -> PlayerId
-getPosPlayerId bs c = fromMaybe 0 $ getFirstJust $ map (getPid c) bs
-
-getPid :: Coordinate -> Bike -> Maybe PlayerId
-getPid c b
-    | c == (unCurrentLocation b) Just (GameTypes.unPlayerId b)
-    | c `elem` (unTrail b) = Just (GameTypes.unPlayerId b)
-    | otherwise = Nothing
-
 getOutputBike :: Bike -> OutputBike
 getOutputBike (Bike pid c loc tr) =
     OutputBike pid loc c tr
 
-printGrid :: Grid -> IO ()
-printGrid = mapM_ putStrLn . gridToLineStrings
-
-gridToString :: Grid -> String
-gridToString = intercalate "\n" . gridToLineStrings
-
-gridToLineStrings :: Grid -> [String]
-gridToLineStrings g = (map . map) (getPosChar g) $ getGridCoords $ unGridSize g
-
-getGridCoords :: GridSize -> [[Coordinate]]
-getGridCoords (maxX, maxY) =
-    map (getLineCoords (maxX, maxY)) $ [0..(maxX-1)]
-
-getLineCoords :: GridSize -> Int -> [Coordinate]
-getLineCoords (maxY,_) x = [(x,y) | y <- [0..(maxY-1)]]
-
-getFrameChar :: GridSize -> Coordinate -> Maybe Char
-getFrameChar (maxX, maxY) (x, y)
-    | isOut x maxX && isOut y maxY = Just '+'
-    | isOut x maxX = Just '|'
-    | isOut y maxY = Just '-'
-    | otherwise = Nothing
-    where isOut a bound = a >= bound || a < 0
-
-getPosChar :: Grid -> Coordinate -> Char
-getPosChar (Grid gs bs queue) c =
-    fromMaybe ' ' $ msum $ (getFrameChar gs c) : (map (getBikePosChar c) $ bs ++ (map unQueueItem queue))
-
-getBikePosChar :: Coordinate -> Bike -> Maybe Char
-getBikePosChar c (Bike _ _ curr tr)
-    | curr == c = Just 'o'
-    | otherwise =
-        case find (c==) (tr) of
-            Just _ -> Just 'X'
-            Nothing -> Nothing
