@@ -9,8 +9,7 @@ data Config = Config {
   brokerHost :: String,
   brokerPort :: Int,
   brokerUser :: String,
-  brokerPassword :: String,
-  clientName :: String
+  brokerPassword :: String
 }
 
 getConfig :: IO (Config)
@@ -20,8 +19,7 @@ getConfig = do
     mqttConfig <- subconfig "mqtt" config
     host <- lookup "brokerHost" mqttConfig
     port <- lookup "brokerPort" mqttConfig
-    name <- lookup "clientName" mqttConfig
     user <- lookup "brokerUserName" mqttConfig
     pass <- lookup "brokerPassword" mqttConfig
 
-    return $ Config host port user pass name
+    return $ Config host port user pass
