@@ -156,6 +156,7 @@ getPosPlayerId bs c = fromMaybe 0 $ getFirstJust $ map (getPid c) bs
 
 getPid :: Coordinate -> Bike -> Maybe PlayerId
 getPid c b
+    | c == (unCurrentLocation b) Just (GameTypes.unPlayerId b)
     | c `elem` (unTrail b) = Just (GameTypes.unPlayerId b)
     | otherwise = Nothing
 
@@ -174,10 +175,10 @@ gridToLineStrings g = (map . map) (getPosChar g) $ getGridCoords $ unGridSize g
 
 getGridCoords :: GridSize -> [[Coordinate]]
 getGridCoords (maxX, maxY) =
-    map (getLineCoords (maxX, maxY)) $ [0..maxX]
+    map (getLineCoords (maxX, maxY)) $ [0..(maxX-1)]
 
 getLineCoords :: GridSize -> Int -> [Coordinate]
-getLineCoords (maxY,_) x = [(x,y) | y <- [0..maxY]]
+getLineCoords (maxY,_) x = [(x,y) | y <- [0..(maxY-1)]]
 
 getFrameChar :: GridSize -> Coordinate -> Maybe Char
 getFrameChar (maxX, maxY) (x, y)
