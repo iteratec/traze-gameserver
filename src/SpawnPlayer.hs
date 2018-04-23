@@ -70,7 +70,8 @@ awayFromCoordinates :: Coordinate -> [Coordinate] -> Int
 awayFromCoordinates c cs = minimum $ map (awayFromCoordinate c) cs
 
 afwSingleAxis :: Int -> Int -> Int
-afwSingleAxis max x 
-  | x <  (max `div` 2) = x + 1
-  | x == (max `div` 2) = x + (max `mod` 2)
-  | x >  (max `div` 2) = max - x
+afwSingleAxis maxi x 
+  | x <  (maxi `div` 2) = x + 1
+  | x == (maxi `div` 2) = x + (maxi `mod` 2)
+  | x >  (maxi `div` 2) = maxi - x
+  | otherwise = 0

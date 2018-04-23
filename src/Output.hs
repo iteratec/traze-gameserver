@@ -2,9 +2,9 @@
 module Output where
 
 import GameTypes
+import InstanceTypes
 import GameLogic
 import SpawnQueue
-import Instance
 
 import Data.Char
 import Data.Aeson

@@ -1,6 +1,7 @@
 module Main where
 
 import GameTypes
+import InstanceTypes
 import SpawnPlayer
 import SpawnQueue
 import Mqtt
@@ -16,6 +17,8 @@ import Control.Monad
 import Control.Monad.STM
 import Control.Monad.Loops
 import Debug.Trace
+
+import System.Random
 
 main :: IO ()
 main = do
@@ -78,7 +81,8 @@ executeInstanceStep :: TQueue Instance -> TQueue Interaction -> TQueue Player ->
 executeInstanceStep output interactions playerQueue tickerq inst = do
     threadDelay sampleLength
     is <- atomically $ flushTQueue interactions -- TODO: remove duplicates
-    (inst', deaths, newPlayers) <- runInstance inst is
+    generator <- getStdGen
+    let (inst', deaths, newPlayers) = runInstance generator inst is
     sendDeaths deaths tickerq
     _ <- mapM (\p -> atomically $ writeTQueue playerQueue p) newPlayers
     atomically $ writeTQueue output (trace (show inst') inst')

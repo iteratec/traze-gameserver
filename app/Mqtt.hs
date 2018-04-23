@@ -1,9 +1,9 @@
 module Mqtt where
 
-import GameTypes
-import Instance
+import InstanceTypes
 import Config
 import Output
+import MqttStructure
 
 import qualified Data.ByteString as BS
 
@@ -14,22 +14,12 @@ import Control.Monad.STM
 
 import Data.Aeson
 import Data.UUID
-import Data.List.Split
-import Data.ByteString.Lazy (toStrict, fromStrict)
-
-import Text.Read
+import Data.ByteString.Lazy (toStrict)
 
 import System.Random
 
 import qualified Network.Mosquitto as M
 import Network.Mosquitto.Internal.Types
-
-data MqttMessage = MqttMessage String BS.ByteString
-
-data MessageType
-    = Steering InstanceName PlayerId
-    | Bail InstanceName PlayerId
-    | Join InstanceName
 
 -- | publish 
 mqttThread :: TQueue (String, BS.ByteString) -> TQueue Interaction -> Config -> IO ()
@@ -62,6 +52,14 @@ mqttThread messageQueue commandQueue config = M.withMosquittoLibrary $ do
     M.destroyMosquitto m
     return ()
 
+handleMessage :: TQueue Interaction -> Message -> STM ()
+handleMessage queue (Message _ top payl _ _) = case parseTopic top of
+    (Just (Steering _ pid)) -> writeSteerCommand queue pid $ parseSteerInput payl
+    (Just (Bail _ pid)) -> writeBailCommand queue pid $ parseBailInput payl
+    (Just (Join _)) -> writeJoinCommand queue $ parseJoinInput payl
+    _ -> return ()
+
+
 castTickThread :: TQueue Tick -> TQueue (String, BS.ByteString) -> STM ()
 castTickThread input output = do
     tick <- readTQueue input
@@ -86,51 +84,4 @@ castNewPlayerThread input output = do
     newP <- readTQueue input
     let message = (\p -> ("traze/1/player/"++ (unMqttClientName p) ++ "\0", toStrict $ encode $ playerToAcceptJoinRequestOutput p)) newP
     writeTQueue output message
-
-handleMessage :: TQueue Interaction -> Message -> STM ()
-handleMessage queue (Message _ top payl _ _) = case parseTopic top of
-    (Just (Steering _ pid)) -> writeSteerCommand queue pid $ parseSteerInput payl
-    (Just (Bail _ pid)) -> writeBailCommand queue pid $ parseBailInput payl
-    (Just (Join _)) -> writeJoinCommand queue $ parseJoinInput payl
-    _ -> return ()
-
-writeSteerCommand :: TQueue Interaction -> PlayerId -> Maybe SteerInput -> STM ()
-writeSteerCommand _ _ Nothing = return ()
-writeSteerCommand queue pid (Just stin) = case uuid of
-    Just session ->  writeTQueue queue $ GridCommand (MoveCommand pid (Steer $ stInCourse stin)) session
-    Nothing -> return ()
-    where uuid = (Data.UUID.fromString $ stInPlayerToken stin)
-
-writeBailCommand :: TQueue Interaction -> PlayerId -> Maybe BailInput -> STM ()
-writeBailCommand _ _ Nothing = return ()
-writeBailCommand queue pid (Just input) = case uuid of
-    Just session -> writeTQueue queue $ GridCommand (Quit pid) session
-    Nothing -> return ()
-    where uuid = (Data.UUID.fromString $ bailPlayerToken input)
-
-writeJoinCommand :: TQueue Interaction -> Maybe JoinInput -> STM()
-writeJoinCommand _ Nothing = return ()
-writeJoinCommand queue (Just joinInput) = writeTQueue queue (JoinRequest (joInName joinInput) (joInMqttClientName joinInput))
-    
-parseTopic :: String -> Maybe MessageType
-parseTopic top = case (splitOn "/" top) of
-     ("traze" : instN : pid : "steer" : []) -> getSteering instN (readMaybe pid)
-     ("traze" : instN : pid : "bail"  : []) -> getBail instN (read pid)
-     ("traze" : instN : "join" : []) -> Just $ Join instN
-     _ -> Nothing
-
-     where getSteering instN (Just pid) = Just $ Steering instN pid
-           getSteering _ Nothing = Nothing
-
-           getBail instN (Just pid) = Just $ Bail instN pid
-           getBail _ Nothing = Nothing
-
-parseSteerInput :: BS.ByteString -> Maybe SteerInput
-parseSteerInput bs = decode $ fromStrict bs
-
-parseBailInput :: BS.ByteString -> Maybe BailInput
-parseBailInput bs = decode $ fromStrict bs
-
-parseJoinInput :: BS.ByteString -> Maybe JoinInput
-parseJoinInput bs = decode $ fromStrict bs
 
