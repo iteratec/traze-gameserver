@@ -28,4 +28,5 @@ data Player = Player {
 data Interaction 
   = GridCommand Command UUID
   | JoinRequest Nick MqttClientName
+  deriving (Show, Eq)
 

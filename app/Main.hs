@@ -18,12 +18,13 @@ import Control.Monad.STM
 import Control.Monad.Loops
 import Debug.Trace
 
+import Data.List
+
 import System.Random
 
 main :: IO ()
 main = do
     executeInstance =<< initialInstance
-    return ()
 
 oneSecond :: Int
 oneSecond = (10 :: Int) ^ (6 :: Int)
@@ -73,19 +74,17 @@ initialInstance = do
     return $ Instance grid "1" []
 
 gameThread :: Instance -> TQueue Instance -> TQueue Interaction -> TQueue Player -> TQueue Tick -> IO ()
-gameThread inst instq interq playerq tickerq = do
-    _ <- iterateUntilM (\_->False) (executeInstanceStep instq interq playerq tickerq) inst
-    return ()
+gameThread inst instq interq playerq tickerq = iterateM_ (executeInstanceStep instq interq playerq tickerq) inst
 
 executeInstanceStep :: TQueue Instance -> TQueue Interaction -> TQueue Player -> TQueue Tick -> Instance -> IO (Instance)
 executeInstanceStep output interactions playerQueue tickerq inst = do
     threadDelay sampleLength
-    is <- atomically $ flushTQueue interactions -- TODO: remove duplicates
+    is <- atomically $ fmap nub $ flushTQueue interactions
     generator <- getStdGen
     let (inst', deaths, newPlayers) = runInstance generator inst is
     sendDeaths deaths tickerq
     _ <- mapM (\p -> atomically $ writeTQueue playerQueue p) newPlayers
-    atomically $ writeTQueue output (trace (show inst') inst')
+    atomically $ writeTQueue output (traceShowId inst')
     return inst'
 
 respawnPlayerIfNeeded :: Grid -> Grid
