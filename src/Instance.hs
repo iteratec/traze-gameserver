@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Instance (
   runInstance
 ) where
@@ -11,35 +13,38 @@ import Colors
 
 import Data.Maybe
 import Data.List
-import Data.UUID
-import System.Random
+
+import Control.Monad.State
+import Control.Monad.Random
 
 -- | runs a round of interactions on a given instance.
-runInstance ::RandomGen g => g -> Instance -> [Interaction] -> (Instance, [Death], [Player])
-runInstance generator inst @ (Instance grid instanceName players) interactions = do
-  (Instance finalGrid instanceName players', deaths, newPlayers)
-  where
-      commands = map fromJust $ filter isJust $ map (commandFromInteraction inst) interactions
+runInstance :: (MonadRandom m, MonadState Instance m) => [Interaction] -> m ([Death], [Player])
+runInstance interactions = do
+  inst @ (Instance grid instanceName players) <- get
+  let commands = mapMaybe (commandFromInteraction inst) interactions
       (grid', deaths) = play grid commands
       playersAfterRound = (onGrid players grid')
-      inst' = Instance grid' instanceName playersAfterRound
-      (inst'', newPlayers) = chainApply (spawnPlayerOnInstance generator) inst' interactions
-      players' = playersAfterRound ++ newPlayers
-      finalGrid = unGrid inst''
+  newPlayers <- catMaybes <$> mapM spawnPlayerOnInstance interactions
+  let players' = playersAfterRound ++ newPlayers
+  finalGrid <- gets unGrid
 
-spawnPlayerOnInstance :: RandomGen g => g -> Instance -> Interaction -> (Instance, Maybe Player)
-spawnPlayerOnInstance _ inst (GridCommand _ _) = (inst, Nothing)
-spawnPlayerOnInstance generator inst @ (Instance grid instanceName players) (JoinRequest nick mqttName) =
-    case isJust maybeBike of
-    False -> (inst, Nothing)
-    True  -> ((Instance grid' instanceName (newPlayer : players)), Just newPlayer) 
-    where 
-        (grid', maybeBike) = spawnPlayer grid
-        pid = GameTypes.unPlayerId $ fromJust maybeBike
-        initialPos = GameTypes.unCurrentLocation $ fromJust maybeBike
-        newUUID :: UUID
-        (newUUID, _) = random generator
-        newPlayer = Player pid nick 0 0 (trazeColorStrings !! pid) newUUID mqttName initialPos
+  put (Instance finalGrid instanceName players')
+  return (deaths, newPlayers)
+
+spawnPlayerOnInstance :: (MonadRandom m, MonadState Instance m) => Interaction -> m (Maybe Player)
+spawnPlayerOnInstance (GridCommand _ _) = return Nothing
+spawnPlayerOnInstance (JoinRequest nick mqttName) = do
+  Instance grid instanceName players <- get
+  let (grid', maybeBike) = spawnPlayer grid
+  case maybeBike of
+    Nothing -> return Nothing
+    Just bike -> do
+      newUUID <- getRandom
+      let pid = GameTypes.unPlayerId bike
+          initialPos = GameTypes.unCurrentLocation bike
+          newPlayer = Player pid nick 0 0 (trazeColorStrings !! pid) newUUID mqttName initialPos
+      put (Instance grid' instanceName (newPlayer : players))
+      return $ Just newPlayer 
 
 commandFromInteraction :: Instance -> Interaction -> Maybe Command
 commandFromInteraction inst (GridCommand c session) = if isJust player && session == unSession (fromJust player)
@@ -48,15 +53,6 @@ commandFromInteraction inst (GridCommand c session) = if isJust player && sessio
     where pid = getCommandPlayerId c
           player = getPlayerById inst pid
 commandFromInteraction _ _ = Nothing
-
-chainApply :: (a -> b -> (a, Maybe c)) -> a -> [b] -> (a, [c])
-chainApply _ a [] = (a, [])
-chainApply f a (b:bs) = case isJust c'' of
-  False -> (a'', cs')
-  True  -> (a'', (fromJust c'') : cs')
-  where 
-  (a', cs')  = chainApply f a bs
-  (a'', c'') = f a' b
 
 onGrid :: [Player] -> Grid -> [Player]
 onGrid ps grid = filter (\p -> (InstanceTypes.unPlayerId p) `elem` (map GameTypes.unPlayerId (unBikes grid ++ map unQueueItem (unQueue grid)))) ps

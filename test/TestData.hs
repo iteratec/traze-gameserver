@@ -1,6 +1,9 @@
 module TestData where
 
 import GameTypes
+import InstanceTypes
+import Data.UUID (fromString)
+import Data.Maybe
 
 bike1 :: Bike
 bike1 = Bike 1 E (2,1) [ (1,1) , (0,1) ]
@@ -35,4 +38,10 @@ grid3 = Grid (3,3) [
     (Bike 1 W (0,1) []),
     (Bike 2 E (2,1) [])
     ] []
+
+player1 :: Player
+player1 = Player 1 "Player one" 0 0 "#FFFFFF" (fromJust $ fromString "c2cc10e1-57d6-4b6f-9899-38d972112d8c") "mqtt1" (1,2)
+
+instance1 :: Instance
+instance1 = Instance grid1 "blablubb" [player1]
 

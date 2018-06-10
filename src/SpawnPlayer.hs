@@ -5,14 +5,12 @@ import Tuple
 import SpawnQueue
 
 import Data.List (find)
-import Data.Maybe (fromJust)
 
 spawnPlayer :: Grid -> (Grid, Maybe Bike)
-spawnPlayer g = case spawnCoord of
+spawnPlayer g = case getSpawnCoord g of
     Nothing   -> (g, Nothing)
-    Just _ -> (Grid (unGridSize g) (unBikes g) ((enQueue b) : (unQueue g)), Just b)
-    where b = Bike (newPlayerId (map (unPlayerId) $ (unBikes g) ++ (map unQueueItem $ unQueue g))) N (fromJust spawnCoord) []
-          spawnCoord = getSpawnCoord g
+    Just coord -> (Grid (unGridSize g) (unBikes g) ((enQueue b) : (unQueue g)), Just b)
+        where b = Bike (newPlayerId (map (unPlayerId) $ (unBikes g) ++ (map unQueueItem $ unQueue g))) N (coord) []
 
 newPlayerId :: [PlayerId] -> PlayerId
 newPlayerId ps = x

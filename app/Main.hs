@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Main where
 
 import GameTypes
@@ -10,21 +13,34 @@ import Instance
 import Config
 
 import Control.Concurrent
-import Control.Concurrent.Async
 import Control.Concurrent.STM.TQueue
 
 import Control.Monad
 import Control.Monad.STM
-import Control.Monad.Loops
+import Control.Monad.IO.Class
+import Control.Monad.State
+import Control.Monad.Random
+import Control.Monad.Reader
+
+import qualified Data.ByteString as BS
+
 import Debug.Trace
 
 import Data.List
 
-import System.Random
-
 main :: IO ()
 main = do
-    executeInstance =<< initialInstance
+    config <- getConfig
+    appEnv <- initAppEnv config
+    stdGen <- getStdGen -- mkStdGen 1 for testing
+    runTrazeMonad appEnv initialInstance stdGen executeInstance
+
+newtype TrazeMonad a = TM { unTM :: RandT StdGen (ReaderT AppEnv (StateT Instance IO)) a }
+  deriving (Functor, Applicative, MonadReader AppEnv, Monad, MonadRandom, MonadState Instance, MonadIO)
+
+runTrazeMonad :: AppEnv -> Instance -> StdGen -> TrazeMonad a -> IO a
+runTrazeMonad appEnv inst stdGen (TM m) =
+  evalStateT (runReaderT (evalRandT m stdGen) appEnv) inst
 
 oneSecond :: Int
 oneSecond = (10 :: Int) ^ (6 :: Int)
@@ -32,11 +48,18 @@ oneSecond = (10 :: Int) ^ (6 :: Int)
 sampleLength :: Int
 sampleLength = oneSecond `div` 4
 
-executeInstance :: Instance -> IO ()
-executeInstance inst = do
+data AppEnv = AppEnv {
+    config :: Config, 
+    mqttQueue :: TQueue (String, BS.ByteString),
+    inputQueue :: TQueue Interaction,
+    gameStateQueue :: TQueue Instance,
+    newPlayerQueue :: TQueue Player,
+    tickerQueue :: TQueue Tick
+}
 
-    config <- getConfig
-
+initAppEnv :: (MonadIO m) => Config -> m AppEnv
+initAppEnv config = liftIO $ do
+    
     -- outgoing messages via mqtt
     mqttQueue <- atomically $ newTQueue
 
@@ -59,33 +82,28 @@ executeInstance inst = do
     _ <- forkIO $ forever $ do
         threadDelay $ 5 * oneSecond
         atomically $ castGameInstancesThread gameStateQueue mqttQueue
+    return AppEnv {..}
 
-    gameProcess <- async $ gameThread inst gameStateQueue inputQueue newPlayerQueue tickerQueue
 
-    wait gameProcess
-    return ()
+executeInstance :: (MonadReader AppEnv m, MonadRandom m, MonadState Instance m, MonadIO m) => m ()
+executeInstance = forever executeInstanceStep
 
-initialGrid :: IO Grid
-initialGrid = return $ Grid (62,62) [] []
+initialGrid :: Grid
+initialGrid = Grid (62,62) [] []
 
-initialInstance :: IO Instance
-initialInstance = do
-    grid <- initialGrid
-    return $ Instance grid "1" []
+initialInstance :: Instance
+initialInstance = Instance initialGrid "1" []
 
-gameThread :: Instance -> TQueue Instance -> TQueue Interaction -> TQueue Player -> TQueue Tick -> IO ()
-gameThread inst instq interq playerq tickerq = iterateM_ (executeInstanceStep instq interq playerq tickerq) inst
-
-executeInstanceStep :: TQueue Instance -> TQueue Interaction -> TQueue Player -> TQueue Tick -> Instance -> IO (Instance)
-executeInstanceStep output interactions playerQueue tickerq inst = do
-    threadDelay sampleLength
-    is <- atomically $ fmap nub $ flushTQueue interactions
-    generator <- getStdGen
-    let (inst', deaths, newPlayers) = runInstance generator inst is
-    sendDeaths deaths tickerq
-    _ <- mapM (\p -> atomically $ writeTQueue playerQueue p) newPlayers
-    atomically $ writeTQueue output (traceShowId inst')
-    return inst'
+executeInstanceStep :: (MonadReader AppEnv m, MonadRandom m, MonadState Instance m, MonadIO m) => m ()
+executeInstanceStep = do
+    AppEnv {..} <- ask
+    liftIO $ threadDelay sampleLength
+    is <- liftIO $ atomically $ fmap nub $ flushTQueue inputQueue
+    (deaths, newPlayers) <- runInstance is
+    liftIO $ sendDeaths deaths tickerQueue
+    liftIO $ mapM_ (\p -> atomically $ writeTQueue newPlayerQueue p) newPlayers
+    inst <- get
+    liftIO $ atomically $ writeTQueue gameStateQueue (traceShowId inst)
 
 respawnPlayerIfNeeded :: Grid -> Grid
 respawnPlayerIfNeeded grid@(Grid _ bs queue)

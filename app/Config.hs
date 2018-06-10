@@ -2,6 +2,7 @@
 
 module Config where
 
+import Control.Monad.IO.Class (liftIO, MonadIO)
 import Prelude hiding (lookup)
 import Data.Yaml.Config (load, subconfig, lookup)
 
@@ -12,8 +13,8 @@ data Config = Config {
   brokerPassword :: String
 }
 
-getConfig :: IO (Config)
-getConfig = do
+getConfig :: (MonadIO m) => m (Config)
+getConfig = liftIO $ do
     config <- load "./traze.yml"
 
     mqttConfig <- subconfig "mqtt" config

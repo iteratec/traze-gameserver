@@ -1,6 +1,5 @@
 module RenderGridSpec (spec) where
 
-import GameTypes
 import GameLogic
 
 import TestData
