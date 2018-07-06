@@ -24,6 +24,7 @@ runInstance interactions = do
   let commands = mapMaybe (commandFromInteraction inst) interactions
       (grid', deaths) = play grid commands
       playersAfterRound = (onGrid players grid')
+  put (Instance grid' instanceName players)
   newPlayers <- catMaybes <$> mapM spawnPlayerOnInstance interactions
   let players' = playersAfterRound ++ newPlayers
   finalGrid <- gets unGrid
