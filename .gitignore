@@ -1,4 +1,5 @@
 .stack-work/
+traze.cabal
 hackaTron.cabal
 *.swp
 *~
