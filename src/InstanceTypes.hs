@@ -26,7 +26,20 @@ data Player = Player {
 } deriving (Show, Eq)
 
 data Interaction 
-  = GridCommand Command UUID
-  | JoinRequest Nick MqttClientName
+  = GridInteraction GridCommand 
+  | JoinInteraction JoinRequest
   deriving (Show, Eq)
 
+data GridCommand = GridCommand Command UUID
+  deriving (Show, Eq)
+
+data JoinRequest = JoinRequest Nick MqttClientName
+  deriving (Show, Eq)
+
+isGridCommand :: Interaction -> Maybe GridCommand
+isGridCommand (GridInteraction g) = Just g
+isGridCommand _ = Nothing
+
+isJoinRequest :: Interaction -> Maybe JoinRequest
+isJoinRequest (JoinInteraction j) = Just j
+isJoinRequest _ = Nothing

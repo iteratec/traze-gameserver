@@ -27,6 +27,9 @@ import qualified Data.ByteString as BS
 import Debug.Trace
 
 import Data.List
+import Data.Maybe
+import Data.Time.Clock
+import Data.Time.Clock.System
 
 main :: IO ()
 main = do
@@ -42,10 +45,10 @@ runTrazeMonad :: AppEnv -> Instance -> StdGen -> TrazeMonad a -> IO a
 runTrazeMonad appEnv inst stdGen (TM m) =
   evalStateT (runReaderT (evalRandT m stdGen) appEnv) inst
 
-oneSecond :: Int
-oneSecond = (10 :: Int) ^ (6 :: Int)
+oneSecond :: Integer
+oneSecond = (10 :: Integer) ^ (6 :: Integer)
 
-sampleLength :: Int
+sampleLength :: Integer
 sampleLength = oneSecond `div` 4
 
 data AppEnv = AppEnv {
@@ -80,7 +83,7 @@ initAppEnv config = liftIO $ do
     _ <- forkIO $ forever $ atomically $ castNewPlayerThread newPlayerQueue mqttQueue
     _ <- forkIO $ forever $ atomically $ castTickThread tickerQueue mqttQueue
     _ <- forkIO $ forever $ do
-        threadDelay $ 5 * oneSecond
+        threadDelay $ fromInteger $ 5 * oneSecond
         atomically $ castGameInstancesThread gameStateQueue mqttQueue
     return AppEnv {..}
 
@@ -96,10 +99,29 @@ initialInstance = Instance initialGrid "1" []
 
 executeInstanceStep :: (MonadReader AppEnv m, MonadRandom m, MonadState Instance m, MonadIO m) => m ()
 executeInstanceStep = do
+    entryTime <- liftIO $ getSystemTime
     AppEnv {..} <- ask
-    liftIO $ threadDelay sampleLength
     is <- liftIO $ atomically $ fmap nub $ flushTQueue inputQueue
-    (deaths, newPlayers) <- runInstance is
+
+    deaths <- stepInstance $ catMaybes $ map isGridCommand is
+    gridStepTime <- liftIO $ getSystemTime
+    let gridStepDuration = diffUTCTime (systemToUTCTime gridStepTime) (systemToUTCTime entryTime)
+    liftIO $ putStrLn $ "gridStep took " ++ (show gridStepDuration)
+
+    newPlayers <- runSpawning $ catMaybes $ map isJoinRequest is
+
+    spawnTime <- liftIO $ getSystemTime
+    let spawnDuration = diffUTCTime (systemToUTCTime spawnTime) (systemToUTCTime gridStepTime)
+    liftIO $ putStrLn $ "playerSpawn took " ++ (show spawnDuration)
+
+
+    let computationTime = diffUTCTime (systemToUTCTime spawnTime) (systemToUTCTime entryTime)
+    let remainingWindow = (fromInteger sampleLength) - (computationTime * realToFrac oneSecond)
+
+    liftIO $ putStrLn $ "sleeping for " ++ (show remainingWindow)
+
+    liftIO $ threadDelay $ round remainingWindow
+
     liftIO $ sendDeaths deaths tickerQueue
     liftIO $ mapM_ (\p -> atomically $ writeTQueue newPlayerQueue p) newPlayers
     inst <- get

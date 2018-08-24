@@ -1,7 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Instance (
-  runInstance
+  stepInstance,
+  runSpawning,
+  spawnPlayerOnInstance
 ) where
 
 import InstanceTypes
@@ -17,23 +19,22 @@ import Data.List
 import Control.Monad.State
 import Control.Monad.Random
 
--- | runs a round of interactions on a given instance.
-runInstance :: (MonadRandom m, MonadState Instance m) => [Interaction] -> m ([Death], [Player])
-runInstance interactions = do
+stepInstance :: (MonadState Instance m) => [GridCommand] -> m [Death]
+stepInstance interactions = do
   inst @ (Instance grid instanceName players) <- get
-  let commands = mapMaybe (commandFromInteraction inst) interactions
+  let commands = mapMaybe (commandFromInteraction inst) $ map GridInteraction interactions
       (grid', deaths) = play grid commands
-      playersAfterRound = (onGrid players grid')
-  put (Instance grid' instanceName players)
+      playersAfterRound = onGrid players grid'
+  put (Instance grid' instanceName playersAfterRound)
+  return deaths
+
+runSpawning :: (MonadRandom m, MonadState Instance m) => [JoinRequest] -> m [Player]
+runSpawning interactions = do
+  inst @ (Instance grid instanceName players) <- get
   newPlayers <- catMaybes <$> mapM spawnPlayerOnInstance interactions
-  let players' = playersAfterRound ++ newPlayers
-  finalGrid <- gets unGrid
+  return newPlayers
 
-  put (Instance finalGrid instanceName players')
-  return (deaths, newPlayers)
-
-spawnPlayerOnInstance :: (MonadRandom m, MonadState Instance m) => Interaction -> m (Maybe Player)
-spawnPlayerOnInstance (GridCommand _ _) = return Nothing
+spawnPlayerOnInstance :: (MonadRandom m, MonadState Instance m) => JoinRequest -> m (Maybe Player)
 spawnPlayerOnInstance (JoinRequest nick mqttName) = do
   Instance grid instanceName players <- get
   let (grid', maybeBike) = spawnPlayer grid
@@ -45,10 +46,10 @@ spawnPlayerOnInstance (JoinRequest nick mqttName) = do
           initialPos = GameTypes.unCurrentLocation bike
           newPlayer = Player pid nick 0 0 (trazeColorStrings !! pid) newUUID mqttName initialPos
       put (Instance grid' instanceName (newPlayer : players))
-      return $ Just newPlayer 
+      return $ Just newPlayer
 
 commandFromInteraction :: Instance -> Interaction -> Maybe Command
-commandFromInteraction inst (GridCommand c session) = if isJust player && session == unSession (fromJust player)
+commandFromInteraction inst (GridInteraction (GridCommand c session)) = if isJust player && session == unSession (fromJust player)
     then Just c
     else Nothing
     where pid = getCommandPlayerId c
