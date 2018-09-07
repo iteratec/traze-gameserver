@@ -118,14 +118,13 @@ executeInstanceStep = do
     let computationTime = diffUTCTime (systemToUTCTime spawnTime) (systemToUTCTime entryTime)
     let remainingWindow = (fromInteger sampleLength) - (computationTime * realToFrac oneSecond)
 
-    liftIO $ putStrLn $ "sleeping for " ++ (show remainingWindow)
-
-    liftIO $ threadDelay $ round remainingWindow
-
     liftIO $ sendDeaths deaths tickerQueue
     liftIO $ mapM_ (\p -> atomically $ writeTQueue newPlayerQueue p) newPlayers
     inst <- get
     liftIO $ atomically $ writeTQueue gameStateQueue (traceShowId inst)
+
+    liftIO $ putStrLn $ "sleeping for " ++ (show remainingWindow)
+    liftIO $ threadDelay $ round remainingWindow
 
 respawnPlayerIfNeeded :: Grid -> Grid
 respawnPlayerIfNeeded grid@(Grid _ bs queue)

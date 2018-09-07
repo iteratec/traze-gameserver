@@ -30,7 +30,6 @@ stepInstance interactions = do
 
 runSpawning :: (MonadRandom m, MonadState Instance m) => [JoinRequest] -> m [Player]
 runSpawning interactions = do
-  inst @ (Instance grid instanceName players) <- get
   newPlayers <- catMaybes <$> mapM spawnPlayerOnInstance interactions
   return newPlayers
 
