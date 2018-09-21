@@ -108,12 +108,15 @@ executeInstanceStep = do
     let gridStepDuration = diffUTCTime (systemToUTCTime gridStepTime) (systemToUTCTime entryTime)
     liftIO $ putStrLn $ "gridStep took " ++ (show gridStepDuration)
 
-    newPlayers <- runSpawning $ catMaybes $ map isJoinRequest is
+    let joinRequests = catMaybes $ map isJoinRequest is
+
+    newPlayers <- runSpawning $ maybeToList $ listToMaybe $ joinRequests
+
+    liftIO $ atomically $ mapM_ (writeTQueue inputQueue) $ fmap JoinInteraction $ safeTail joinRequests
 
     spawnTime <- liftIO $ getSystemTime
     let spawnDuration = diffUTCTime (systemToUTCTime spawnTime) (systemToUTCTime gridStepTime)
     liftIO $ putStrLn $ "playerSpawn took " ++ (show spawnDuration)
-
 
     let computationTime = diffUTCTime (systemToUTCTime spawnTime) (systemToUTCTime entryTime)
     let remainingWindow = (fromInteger sampleLength) - (computationTime * realToFrac oneSecond)
@@ -125,6 +128,11 @@ executeInstanceStep = do
 
     liftIO $ putStrLn $ "sleeping for " ++ (show remainingWindow)
     liftIO $ threadDelay $ round remainingWindow
+
+safeTail :: [a] -> [a]
+safeTail [] = []
+safeTail [_] = []
+safeTail as = tail as
 
 respawnPlayerIfNeeded :: Grid -> Grid
 respawnPlayerIfNeeded grid@(Grid _ bs queue)
