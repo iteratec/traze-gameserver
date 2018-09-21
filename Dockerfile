@@ -1,4 +1,4 @@
-FROM ubuntu:16.04 as builder
+FROM ubuntu:18.04 as builder
 
 LABEL vendor="iteratec GmbH" 
 LABEL maintainer="Benjamin Brunzel <benjamin.brunzel@iteratec.de>"
@@ -11,7 +11,7 @@ RUN cd /usr/src/traze && \
     stack test && \
     stack build --copy-bins
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libmosquitto.so /usr/lib/x86_64-linux-gnu/libmosquitto.so
 COPY --from=builder /usr/include/mosquitto.h /usr/include/mosquitto.h
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libmosquitto.so.1 /usr/lib/x86_64-linux-gnu/libmosquitto.so.1
