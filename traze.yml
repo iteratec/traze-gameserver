@@ -4,8 +4,11 @@
 # --- MQTT Configuration ---
 
 mqtt:
-    brokerHost: "broker"
+    brokerHost: "localhost"
     brokerPort: 1883
     brokerUserName: "trazeHaskellGameserver"
     brokerPassword: "XeghahNoo2lie0sioB4o"
 
+instances:
+  - "1"
+  - "2"
