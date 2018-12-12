@@ -35,7 +35,15 @@ data Config = Config {
 data Credentials = Credentials {
   username :: String,
   password :: String
-} deriving (Eq, Show)
+} deriving (Eq)
+
+instance Show Credentials where
+  show Credentials {..} =
+    "Credentials {userame = " ++
+    username ++
+    ", password = " ++
+    (fmap (\_->'*') password) ++
+    "}"
 
 data PartialConfig = PartialConfig {
   pcBrokerHost :: Last String,
