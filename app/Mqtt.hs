@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Mqtt where
 
 import InstanceTypes
@@ -27,7 +29,7 @@ mqttThread messageQueue commandQueue config = M.withMosquittoLibrary $ do
     mqttClientName <- randomIO
     m <- M.newMosquitto True (toString mqttClientName) (Just ())
     M.setTls m "" $ Just ("", "")
-    _ <- M.setUsernamePassword m $ Just (brokerUser config, brokerPassword config)
+    _ <- M.setUsernamePassword m $ credentialsToTuple $ brokerCredentials config
     M.setTlsInsecure m True
     -- M.onLog m $ const putStrLn
     _ <- M.setReconnectDelay m True 2 30
@@ -84,4 +86,8 @@ castNewPlayerThread input output = do
     newP <- readTQueue input
     let message = (\p -> ("traze/1/player/"++ (unMqttClientName p) ++ "\0", toStrict $ encode $ playerToAcceptJoinRequestOutput p)) newP
     writeTQueue output message
+
+credentialsToTuple :: Maybe Credentials -> Maybe (String, String)
+credentialsToTuple Nothing = Nothing
+credentialsToTuple (Just (Credentials {..})) = Just (username, password)
 
