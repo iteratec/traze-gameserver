@@ -2,24 +2,27 @@
 
 This repository contains a server implementation for traze, a tron like game that can be played by sending mqtt messages.
 
+### Technology stack
+
+This software is written in `Haskell`, a purely functional programming language. It uses the `stack` build tool for compilation. We provide built binaries as docker images.
+
 ## Running the Server
 
 This section will explain how to run the traze game server
 
-### Technology stack
-
-This software is written in `Haskell`, a purely functional programming language. It uses the `stack` build tool for compilation. 
-
-If you just want to run the game server without setting up a Haskell development environment you can do so by using Docker. We provide pre built docker images via [docker hub](https://hub.docker.com/r/iteratec/traze-gameserver/)
+The easiest way to run the traze gameserver yourself is to use docker. We provide pre built docker images via [docker hub](https://hub.docker.com/r/iteratec/traze-gameserver/)
 
 ```
-docker run -e "TRAZE_BROKER_USER=<yourUserName>" -e "TRAZE_BROKER_PASSWORD=<yourPassword>" iteratec/traze-gameserver
-
+docker run iteratec/traze-gameserver
 ```
 
-You can also build the docker image yourself in the project root directory.
+you can override the default configuration using environment variables like so:
+
 ```
-docker build -t traze-gameserver .
+docker run \
+  -e "TRAZE_BROKER_USER=<yourUserName>" \
+  -e "TRAZE_BROKER_PASSWORD=<yourPassword>"\
+  iteratec/traze-gameserver
 ```
 
 ### Connfiguration
@@ -32,8 +35,7 @@ This section explains the configuration of the traze gameserver. It can be confi
 | TRAZE_BROKER_PORT     | The port of the MQTT Broker to connect to     | No        | 1883          |
 | TRAZE_BROKER_USER     | The username for MQTT Broker authentication   | No        |               |
 | TRAZE_BROKER_PASSWORD | The password for MQTT Broker authentication   | No        |               |
-| TRAZE_INSTANCES       | A space separated list of instance names      | Yes       |               |
-| --------------------- | --------------------------------------------- | --------- | ------------- |
+| TRAZE_INSTANCES       | A space separated list of instance names      | No        | "1"           |
 
 ## Contribute
 
@@ -59,6 +61,13 @@ stack build
 ```
 
 To run the test suite use `stack test`. You can also have stack create an interactive _read evaluate print loop_ environment, the so called _REPL_ for you with `stack ghci`.
+
+#### Building the Docker Image
+
+You can build the docker image yourself in the project root directory.;
+```
+docker build -t traze-gameserver .
+```
 
 #### Docker Dev Setup
 

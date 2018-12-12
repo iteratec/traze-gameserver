@@ -102,5 +102,6 @@ defaultPartialConfig :: PartialConfig
 defaultPartialConfig = mempty
   { pcBrokerHost = pure "localhost"
   , pcBrokerPort = pure 1883
+  , pcInstances = [ InstanceConfig "1" ]
   }
 
