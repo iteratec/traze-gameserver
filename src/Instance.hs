@@ -68,7 +68,10 @@ removePlayer :: PlayerId -> [Player] -> [Player]
 removePlayer pid ps = filter (\p -> not ((InstanceTypes.unPlayerId p) == pid)) ps
 
 incrementFragCount :: PlayerId -> [Player] -> [Player]
-incrementFragCount pid ps = (incrementFrag (fromJust $ findPlayerById pid ps)) : removePlayer pid ps
+incrementFragCount pid ps = 
+  case findPlayerById pid ps of 
+    Nothing -> ps
+    Just player -> (incrementFrag player) : removePlayer pid ps
 
 incrementFrag :: Player -> Player
 incrementFrag Player {..} = Player unPlayerId unPlayerName (unFrags + 1) unDeaths unColor unSession unMqttClientName unInitPosition

@@ -26,7 +26,7 @@ data Player = Player {
 } deriving (Show, Eq)
 
 instance Ord Player where
-  compare one two = compare (InstanceTypes.unPlayerId one) (InstanceTypes.unPlayerId two)
+  compare one two = compare (InstanceTypes.unPlayerId two) (InstanceTypes.unPlayerId one)
 
 data Interaction 
   = GridInteraction GridCommand 
