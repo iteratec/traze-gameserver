@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Instance (
   stepInstance,
@@ -9,7 +10,6 @@ module Instance (
 import InstanceTypes
 import GameTypes
 import GameLogic (play, getCommandPlayerId)
-import SpawnQueue
 import SpawnPlayer
 import Colors
 
@@ -24,7 +24,7 @@ stepInstance interactions = do
   inst @ (Instance grid instanceName players) <- get
   let commands = mapMaybe (commandFromInteraction inst) $ map GridInteraction interactions
       (grid', deaths) = play grid commands
-      playersAfterRound = onGrid players grid'
+      playersAfterRound = playersAfterDeaths players deaths
   put (Instance grid' instanceName playersAfterRound)
   return deaths
 
@@ -48,16 +48,34 @@ spawnPlayerOnInstance (JoinRequest nick mqttName) = do
       return $ Just newPlayer
 
 commandFromInteraction :: Instance -> Interaction -> Maybe Command
-commandFromInteraction inst (GridInteraction (GridCommand c session)) = if isJust player && session == unSession (fromJust player)
+commandFromInteraction inst (GridInteraction (GridCommand c session)) = 
+  if isJust player && session == unSession (fromJust player)
     then Just c
     else Nothing
     where pid = getCommandPlayerId c
           player = getPlayerById inst pid
 commandFromInteraction _ _ = Nothing
 
-onGrid :: [Player] -> Grid -> [Player]
-onGrid ps grid = filter (\p -> (InstanceTypes.unPlayerId p) `elem` (map GameTypes.unPlayerId (unBikes grid ++ map unQueueItem (unQueue grid)))) ps
+playersAfterDeaths :: [Player] -> [Death] -> [Player]
+playersAfterDeaths ps ds = foldr applyDeath ps ds 
+
+applyDeath :: Death -> [Player] -> [Player]
+applyDeath (Suicide pid) ps = removePlayer pid ps
+applyDeath (Collision one two) ps = filter (\p -> not ((InstanceTypes.unPlayerId p) `elem` one : two : [])) ps
+applyDeath (Frag killer casulty) ps =  (sort . (removePlayer casulty) . (incrementFragCount killer)) ps
+
+removePlayer :: PlayerId -> [Player] -> [Player]
+removePlayer pid ps = filter (\p -> not ((InstanceTypes.unPlayerId p) == pid)) ps
+
+incrementFragCount :: PlayerId -> [Player] -> [Player]
+incrementFragCount pid ps = (incrementFrag (fromJust $ findPlayerById pid ps)) : removePlayer pid ps
+
+incrementFrag :: Player -> Player
+incrementFrag Player {..} = Player unPlayerId unPlayerName (unFrags + 1) unDeaths unColor unSession unMqttClientName unInitPosition
+
+findPlayerById :: PlayerId -> [Player] -> Maybe Player
+findPlayerById pid = find (\p -> ((InstanceTypes.unPlayerId p) == pid))
 
 getPlayerById :: Instance -> PlayerId -> Maybe Player
-getPlayerById inst pid = find (\p -> pid == InstanceTypes.unPlayerId p) (unPlayer inst)
+getPlayerById inst pid = findPlayerById pid (unPlayer inst)
 

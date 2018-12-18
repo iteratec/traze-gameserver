@@ -25,6 +25,9 @@ data Player = Player {
   unInitPosition :: Coordinate
 } deriving (Show, Eq)
 
+instance Ord Player where
+  compare one two = compare (InstanceTypes.unPlayerId one) (InstanceTypes.unPlayerId two)
+
 data Interaction 
   = GridInteraction GridCommand 
   | JoinInteraction JoinRequest
