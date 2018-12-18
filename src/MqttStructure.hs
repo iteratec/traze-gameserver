@@ -13,8 +13,8 @@ import Data.UUID
 import Data.List.Split
 import Data.ByteString.Lazy (fromStrict)
 import Text.Read
-
-data MqttMessage = MqttMessage String BS.ByteString
+                            -- Topic  Payload       Retain Message
+data MqttMessage = MqttMessage String BS.ByteString Bool
     deriving (Show, Eq)
 
 data MessageType

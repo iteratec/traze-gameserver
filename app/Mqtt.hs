@@ -7,8 +7,6 @@ import Config
 import Output
 import MqttStructure
 
-import qualified Data.ByteString as BS
-
 import Control.Concurrent
 import Control.Concurrent.STM.TQueue
 import Control.Monad
@@ -21,10 +19,10 @@ import Data.ByteString.Lazy (toStrict)
 import System.Random
 
 import qualified Network.Mosquitto as M
-import Network.Mosquitto.Internal.Types
+import Network.Mosquitto.Internal.Types  
 
 -- | publish 
-mqttThread :: TQueue (String, BS.ByteString) -> TQueue Interaction -> Config -> IO ()
+mqttThread :: TQueue MqttMessage -> TQueue Interaction -> Config -> IO ()
 mqttThread messageQueue commandQueue config = M.withMosquittoLibrary $ do
     mqttClientName <- randomIO
     m <- M.newMosquitto True (toString mqttClientName) (Just ())
@@ -47,8 +45,8 @@ mqttThread messageQueue commandQueue config = M.withMosquittoLibrary $ do
     _ <- M.connect m (brokerHost config) (brokerPort config) 1200
 
     _ <- forkIO $ forever $ do
-        (top, message) <- atomically $ readTQueue messageQueue
-        M.publish m False 0 top message
+        (MqttMessage top message retain) <- atomically $ readTQueue messageQueue
+        M.publish m retain 0 top message
 
     M.loopForever m
     M.destroyMosquitto m
@@ -61,30 +59,35 @@ handleMessage queue (Message _ top payl _ _) = case parseTopic top of
     (Just (Join _)) -> writeJoinCommand queue $ parseJoinInput payl
     _ -> return ()
 
-
-castTickThread :: TQueue Tick -> TQueue (String, BS.ByteString) -> STM ()
+castTickThread :: TQueue Tick -> TQueue MqttMessage -> STM ()
 castTickThread input output = do
     tick <- readTQueue input
-    let message = (\g -> ("traze/1/ticker\0", toStrict $ encode g)) tick
+    let message = (\g -> (MqttMessage "traze/1/ticker\0" (toStrict $ encode g) False)) tick
     writeTQueue output message
 
-castGameInstancesThread :: TQueue Instance -> TQueue (String, BS.ByteString) -> STM ()
+castGameInstancesThread :: TQueue Instance -> TQueue MqttMessage -> STM ()
 castGameInstancesThread input output = do
     inst <- peekTQueue input
-    writeTQueue output ("traze/games", toStrict $ encode $ [(InstancesOutput (unName inst) (length $ unPlayer inst))])
+    let payload = (toStrict $ encode $ [(InstancesOutput (unName inst) (length $ unPlayer inst))]) 
+    writeTQueue output (MqttMessage "traze/games" payload True)
     
-castInstanceThread :: TQueue Instance -> TQueue (String, BS.ByteString) -> STM ()
+castInstanceThread :: TQueue Instance -> TQueue MqttMessage -> STM ()
 castInstanceThread input output = do
     inst <- readTQueue input 
-    let message = (\i -> ("traze/1/grid\0", toStrict $ encode $ gridToGameState $ unGrid i)) inst
-    let playerMessage = (\i -> ("traze/1/players\0", toStrict $ encode $ instanceToPlayersOutput $ i)) inst
+    let topic = "traze/1/grid\0"
+    let payload = (\i -> toStrict $ encode $ gridToGameState $ unGrid i) inst
+    let message = MqttMessage topic payload True
+    let playerPayload = (\i -> toStrict $ encode $ instanceToPlayersOutput $ i) inst
+    let playerMessage = MqttMessage "traze/1/players\0" playerPayload True
     writeTQueue output message
     writeTQueue output playerMessage
 
-castNewPlayerThread :: TQueue Player -> TQueue (String, BS.ByteString) -> STM ()
+castNewPlayerThread :: TQueue Player -> TQueue MqttMessage -> STM ()
 castNewPlayerThread input output = do
     newP <- readTQueue input
-    let message = (\p -> ("traze/1/player/"++ (unMqttClientName p) ++ "\0", toStrict $ encode $ playerToAcceptJoinRequestOutput p)) newP
+    let topic = (\p -> "traze/1/player/"++ (unMqttClientName p) ++ "\0") newP
+    let payload = (\p -> toStrict $ encode $ playerToAcceptJoinRequestOutput p) newP
+    let message = MqttMessage topic payload False
     writeTQueue output message
 
 credentialsToTuple :: Maybe Credentials -> Maybe (String, String)

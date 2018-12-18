@@ -7,6 +7,7 @@ import GameTypes
 import InstanceTypes
 import SpawnPlayer
 import SpawnQueue
+import MqttStructure
 import Mqtt
 import Output
 import Instance
@@ -21,8 +22,6 @@ import Control.Monad.IO.Class
 import Control.Monad.State
 import Control.Monad.Random
 import Control.Monad.Reader
-
-import qualified Data.ByteString as BS
 
 import Debug.Trace
 
@@ -53,7 +52,7 @@ sampleLength = oneSecond `div` 4
 
 data AppEnv = AppEnv {
     config :: Config, 
-    mqttQueue :: TQueue (String, BS.ByteString),
+    mqttQueue :: TQueue MqttMessage,
     inputQueue :: TQueue Interaction,
     gameStateQueue :: TQueue Instance,
     newPlayerQueue :: TQueue Player,
