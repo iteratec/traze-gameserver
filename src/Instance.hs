@@ -3,8 +3,7 @@
 
 module Instance (
   stepInstance,
-  runSpawning,
-  spawnPlayerOnInstance
+  runSpawning
 ) where
 
 import InstanceTypes
@@ -43,7 +42,8 @@ spawnPlayerOnInstance (JoinRequest nick mqttName) = do
       newUUID <- getRandom
       let pid = GameTypes.unPlayerId bike
           initialPos = GameTypes.unCurrentLocation bike
-          newPlayer = Player pid nick 0 0 (trazeColorStrings !! pid) newUUID mqttName initialPos
+          playerColor = (trazeColorStrings !! pid)
+          newPlayer = Player pid nick 0 0 playerColor newUUID mqttName initialPos
       put (Instance grid' instanceName (newPlayer : players))
       return $ Just newPlayer
 
@@ -61,8 +61,9 @@ playersAfterDeaths ps ds = foldr applyDeath ps ds
 
 applyDeath :: Death -> [Player] -> [Player]
 applyDeath (Suicide pid) ps = removePlayer pid ps
-applyDeath (Collision one two) ps = filter (\p -> not ((InstanceTypes.unPlayerId p) `elem` one : two : [])) ps
-applyDeath (Frag killer casulty) ps =  (sort . (removePlayer casulty) . (incrementFragCount killer)) ps
+applyDeath (Collision one two) ps = filter notColided ps
+  where notColided = (\p -> not ((InstanceTypes.unPlayerId p) `elem` one : two : []))
+applyDeath (Frag killer casulty) ps = (sort . (removePlayer casulty) . (incrementFragCount killer)) ps
 
 removePlayer :: PlayerId -> [Player] -> [Player]
 removePlayer pid ps = filter (\p -> not ((InstanceTypes.unPlayerId p) == pid)) ps
@@ -71,10 +72,11 @@ incrementFragCount :: PlayerId -> [Player] -> [Player]
 incrementFragCount pid ps = 
   case findPlayerById pid ps of 
     Nothing -> ps
-    Just player -> (incrementFrag player) : removePlayer pid ps
+    Just player -> (incrementPlayerFrag player) : removePlayer pid ps
 
-incrementFrag :: Player -> Player
-incrementFrag Player {..} = Player unPlayerId unPlayerName (unFrags + 1) unDeaths unColor unSession unMqttClientName unInitPosition
+incrementPlayerFrag :: Player -> Player
+incrementPlayerFrag Player {..} = Player unPlayerId unPlayerName (unFrags + 1) 
+  unDeaths unColor unSession unMqttClientName unInitPosition
 
 findPlayerById :: PlayerId -> [Player] -> Maybe Player
 findPlayerById pid = find (\p -> ((InstanceTypes.unPlayerId p) == pid))

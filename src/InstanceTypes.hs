@@ -10,18 +10,18 @@ type MqttClientName = String
 
 data Instance = Instance {
   unGrid   :: Grid,
-  unName   :: String,
+  unName   :: InstanceName,
   unPlayer :: [Player]
 } deriving (Show, Eq)
 
 data Player = Player {
   unPlayerId     :: PlayerId,
-  unPlayerName   :: String,
+  unPlayerName   :: Nick,
   unFrags        :: Int,
   unDeaths       :: Int,
   unColor        :: String,
   unSession      :: Session,
-  unMqttClientName :: String,
+  unMqttClientName :: MqttClientName,
   unInitPosition :: Coordinate
 } deriving (Show, Eq)
 
@@ -46,3 +46,5 @@ isGridCommand _ = Nothing
 isJoinRequest :: Interaction -> Maybe JoinRequest
 isJoinRequest (JoinInteraction j) = Just j
 isJoinRequest _ = Nothing
+
+data Event a = Event InstanceName a
