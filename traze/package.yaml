@@ -1,0 +1,56 @@
+name:                traze
+version:             0.1.0.0
+github:              "iteratec/traze-gameserver"
+license:             AGPL
+author:              "Benjamin Brunzel"
+maintainer:          "benjamin.brunzel@iteratec.de"
+copyright:           "2017 Benjamin Brunzel"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+synopsis:            Tron like mqtt based game server
+category:            Game
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on Github at <https://github.com/iteratec/traze-gameserver#readme>
+
+dependencies:
+- base
+- text
+- aeson
+- random
+- mtl
+- MonadRandom
+- colour
+- time
+
+library:
+  source-dirs: src
+  dependencies:
+  - bytestring
+  - uuid
+  - stm
+  - split
+  - random
+
+tests:
+  traze-test:
+    main:                Spec.hs
+    source-dirs:         
+    - test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - traze
+    - hspec
+    - HUnit
+    - QuickCheck
+    - uuid
+
