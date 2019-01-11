@@ -13,8 +13,8 @@ spawnPlayer g = case getSpawnCoord g of
         where b = Bike (newPlayerId (map (bikePlayerId) $ (unBikes g) ++ (map unQueueItem $ unQueue g))) N (coord) []
 
 newPlayerId :: [PlayerId] -> PlayerId
-newPlayerId ps = x
-    where Just x = find (`notElem` ps) [1..]
+newPlayerId [] = 1
+newPlayerId ps = succ $ maximum ps
 
 getSpawnCoord :: Grid -> Maybe Coordinate
 getSpawnCoord g = case free of
@@ -27,7 +27,6 @@ scoreAndCord g c = (spawnScore g c, c)
 
 spawnScore :: Grid -> Coordinate -> Int
 spawnScore g c = ((awayFromWalls g c) `div` 2) + (awayFromTrails g c)
---spawnScore g c = (awayFromTrails g c)
 
 allFreeCoords :: Grid -> [Coordinate]
 allFreeCoords (Grid gs bs q) = filter (not . (flip elem $ allBikeTrailCords bs ++ queuedCoords)) (allCoords gs)
