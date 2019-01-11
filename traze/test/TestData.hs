@@ -42,6 +42,17 @@ grid3 = Grid (3,3) [
 player1 :: Player
 player1 = Player 1 "Player one" 0 0 "#FFFFFF" (fromJust $ fromString "c2cc10e1-57d6-4b6f-9899-38d972112d8c") "mqtt1" (1,2)
 
+player2 :: Player
+player2 = Player 2 "Player two" 0 0 "#000000" (fromJust $ fromString "d090ac2f-36e9-4b71-88b3-84699aea7cc5") "mqtt2" (2,2)
+
+player3 :: Player
+player3 = Player 3 "Player three" 0 0 "#FF0000" (fromJust $ fromString "804dd1e8-545b-4981-b543-d47c4b507cbb") "mqtt3" (2,1)
+
+player4 :: Player
+player4 = Player 4 "Player four" 0 0 "#00FF00" (fromJust $ fromString "98e6fbcb-0a0e-45a3-ab2b-4840adf1e52d") "mqtt4" (1,1)
+
+
+
 instance1 :: Instance
 instance1 = Instance grid1 "blablubb" [player1]
 

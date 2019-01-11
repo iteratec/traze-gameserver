@@ -3,7 +3,9 @@
 
 module Traze.Internal.Instance (
   stepInstance,
-  runSpawning
+  runSpawning,
+  applyDeath,
+  incrementPlayerFrag
 ) where
 
 import Traze.Internal.InstanceTypes as IT
