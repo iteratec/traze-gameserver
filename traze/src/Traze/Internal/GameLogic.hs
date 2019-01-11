@@ -2,6 +2,8 @@ module Traze.Internal.GameLogic
   ( play
   , getTiles
   -- below should not be reexported
+  , isOnGrid
+  , isInQueue
   , popFromQueue
   , hasCollided
   , filterCollisions
@@ -35,6 +37,12 @@ play g cs = ((Grid (unGridSize g) bikes'' queue'), deaths ++ collisionSuicides)
 getTiles :: Grid -> [[Int]]
 getTiles g = (map . map) (getPosPlayerId gridBikes) (getGridCoords gs)
     where (Grid gs gridBikes _) = g
+
+isOnGrid :: Grid -> PlayerId -> Bool
+isOnGrid g pid = elem pid (fmap bikePlayerId (unBikes g))
+
+isInQueue :: Grid -> PlayerId -> Bool
+isInQueue g pid = elem pid (fmap (bikePlayerId . retrieveQueueItem) (unQueue g))
 
 popFromQueue :: [QueueItem Bike] -> [Command] -> ([QueueItem Bike], [Bike])
 popFromQueue qs cs = (queue', bikes)

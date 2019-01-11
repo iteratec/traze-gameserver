@@ -10,7 +10,7 @@ module Traze.Internal.Instance (
 
 import Traze.Internal.InstanceTypes as IT
 import Traze.Internal.GameTypes as GT
-import Traze.Internal.GameLogic (play)
+import Traze.Internal.GameLogic (play, isOnGrid, isInQueue)
 import Traze.Internal.SpawnPlayer
 import Traze.Internal.Colors
 
@@ -25,7 +25,9 @@ stepInstance interactions = do
   inst @ (Instance grid instanceName players) <- get
   let commands = mapMaybe (commandFromInteraction inst) $ map GridInteraction interactions
       (grid', deaths) = play grid commands
-      playersAfterRound = playersAfterDeaths players deaths
+      alivePlayers = playersAfterDeaths players deaths
+      removeTimeouts p = (isOnGrid grid' (playerPlayerId p)) || (isInQueue grid' (playerPlayerId p))
+      playersAfterRound = filter removeTimeouts alivePlayers
   put (Instance grid' instanceName playersAfterRound)
   return deaths
 
