@@ -19,6 +19,8 @@ import Data.Either (lefts, rights)
 import Data.List (find)
 import Data.Maybe (fromMaybe)
 
+import Control.Monad (msum)
+
 -- | playing one game round. Takes a list of player
 --   commands and generates the next game state as well as a 
 --   list of possible deaths as a result of the player actions
@@ -100,7 +102,7 @@ drive g b m = case death of
     where newCord = stepCoordinate unCourse' (unCurrentLocation b)
           unCourse' = newCourse (unCourse b) m
           
-          death = getFirstJust $ (getWallKiss $ unGridSize g) : (getFrag g b m) : []
+          death = msum $ (getWallKiss $ unGridSize g) : (getFrag g b m) : []
 
           -- get death if out of grid
           getWallKiss :: GridSize -> Maybe Death
@@ -124,7 +126,7 @@ getFrag (Grid _ bikes _) b m = case fragger of
     Just f -> Just $ getDeath (bikePlayerId f) (bikePlayerId b)
 
     where fragger :: Maybe Bike
-          fragger = getFirstJust $ fmap (droveInTrail $ newCord) bikes
+          fragger = msum $ fmap (droveInTrail $ newCord) bikes
 
           unCourse' = newCourse (unCourse b) m
           newCord = stepCoordinate unCourse' (unCurrentLocation b)
@@ -159,7 +161,7 @@ stepCoordinate S = tupleApply (id        , subtract 1)
 
 -- | get the playerId at a certain coordinate
 getPosPlayerId :: [Bike] -> Coordinate -> PlayerId
-getPosPlayerId bs c = fromMaybe 0 $ getFirstJust $ map (getPid c) bs
+getPosPlayerId bs c = fromMaybe 0 $ msum $ map (getPid c) bs
   where 
     getPid :: Coordinate -> Bike -> Maybe PlayerId
     getPid coord b

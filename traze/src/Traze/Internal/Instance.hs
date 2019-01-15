@@ -1,6 +1,17 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards #-}
 
+{-|
+Module      : Instance
+Description : running an instance
+Copyright   : (c) Benjamin Brunzel, 2018
+License     : BSD3
+Maintainer  : benjamin.brunzel@gmail.com
+
+This module provides functions for creating a
+game instance as well as spawning players and 
+running the actual instance. 
+-}
 module Traze.Internal.Instance (
   stepInstance,
   runSpawning,
@@ -20,7 +31,10 @@ import Data.List
 import Control.Monad.State
 import Control.Monad.Random
 
-stepInstance :: (MonadState Instance m) => [GridCommand] -> m [Death]
+-- | perform a game step in the state monad
+stepInstance :: (MonadState Instance m) => [GridCommand]   -- ^ player commands for this round
+                                        -> m [Death]       -- ^ new state and list of 
+                                                           --   resulting deaths
 stepInstance interactions = do
   inst @ (Instance grid instanceName players) <- get
   let commands = mapMaybe (commandFromInteraction inst) $ map GridInteraction interactions
@@ -31,11 +45,13 @@ stepInstance interactions = do
   put (Instance grid' instanceName playersAfterRound)
   return deaths
 
+-- | spawn new players on the grid. (Spawning only one per round)
 runSpawning :: (MonadRandom m, MonadState Instance m) => [JoinRequest] -> m [Player]
 runSpawning interactions = do
   newPlayers <- catMaybes <$> mapM spawnPlayerOnInstance interactions
   return newPlayers
 
+-- | spawn a player on the instance
 spawnPlayerOnInstance :: (MonadRandom m, MonadState Instance m) => JoinRequest -> m (Maybe Player)
 spawnPlayerOnInstance (JoinRequest nick mqttName) = do
   Instance grid instanceName players <- get
@@ -51,6 +67,7 @@ spawnPlayerOnInstance (JoinRequest nick mqttName) = do
       put (Instance grid' instanceName (newPlayer : players))
       return $ Just newPlayer
 
+-- | check session and generate the resulting command
 commandFromInteraction :: Instance -> Interaction -> Maybe Command
 commandFromInteraction inst (GridInteraction (GridCommand c session)) = 
   if isJust player && session == unSession (fromJust player)
@@ -60,24 +77,29 @@ commandFromInteraction inst (GridInteraction (GridCommand c session)) =
           player = getPlayerById inst pid
 commandFromInteraction _ _ = Nothing
 
+-- | apply deaths to the player list
 playersAfterDeaths :: [Player] -> [Death] -> [Player]
 playersAfterDeaths ps ds = foldr applyDeath ps ds 
 
+-- | apply death to the player list. removing dead players and incrementing frag counts
 applyDeath :: Death -> [Player] -> [Player]
 applyDeath (Suicide pid) ps = removePlayer pid ps
 applyDeath (Collision one two) ps = filter notColided ps
   where notColided = (\p -> not ((playerPlayerId p) `elem` one : two : []))
 applyDeath (Frag killer casulty) ps = (sort . (removePlayer casulty) . (incrementFragCount killer)) ps
 
+-- | remove player with playerId
 removePlayer :: PlayerId -> [Player] -> [Player]
 removePlayer pid ps = filter (\p -> not ((playerPlayerId p) == pid)) ps
 
+-- | increment frag count for the player with a given id
 incrementFragCount :: PlayerId -> [Player] -> [Player]
 incrementFragCount pid ps = 
   case findPlayerById pid ps of 
     Nothing -> ps
     Just player -> (incrementPlayerFrag player) : removePlayer pid ps
 
+-- | increment the frag count of a given player
 incrementPlayerFrag :: Player -> Player
 incrementPlayerFrag Player {..} = Player playerPlayerId unPlayerName (unFrags + 1) 
   unDeaths unColor unSession unMqttClientName unInitPosition

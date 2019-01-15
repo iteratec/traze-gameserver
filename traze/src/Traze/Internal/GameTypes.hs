@@ -1,4 +1,15 @@
 {-# LANGUAGE DeriveGeneric #-}
+
+{-|
+Module      : GameTypes
+Description : game model
+Copyright   : (c) Benjamin Brunzel, 2018
+License     : BSD3
+Maintainer  : benjamin.brunzel@gmail.com
+
+This module contains the game objects in the
+traze game domain.
+-}
 module Traze.Internal.GameTypes where
 
 import Traze.Internal.SpawnQueue

@@ -135,3 +135,12 @@ sendDeath :: TQueue Tick -> Death -> IO ()
 sendDeath tickQueue (Frag p1 p2) = atomically $ writeTQueue tickQueue (DeathTick "frag" p1 p2)
 sendDeath tickQueue (Collision p1 p2) = atomically $ writeTQueue tickQueue (DeathTick "collision" p1 p2)
 sendDeath tickQueue (Suicide p1) = atomically $ writeTQueue tickQueue (DeathTick "suicide" p1 p1)
+
+isGridCommand :: Interaction -> Maybe GridCommand
+isGridCommand (GridInteraction g) = Just g
+isGridCommand _ = Nothing
+
+isJoinRequest :: Interaction -> Maybe JoinRequest
+isJoinRequest (JoinInteraction j) = Just j
+isJoinRequest _ = Nothing
+

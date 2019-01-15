@@ -1,3 +1,15 @@
+{-|
+Module      : InstanceTypes
+Description : game server model
+Copyright   : (c) Benjamin Brunzel, 2018
+License     : BSD3
+Maintainer  : benjamin.brunzel@gmail.com
+
+This module contains model definitions for turning the 
+game defined in "Traze.Internal.GameTypes" into a computer network 
+based client server game.
+-}
+
 module Traze.Internal.InstanceTypes where
 
 import Traze.Internal.GameTypes
