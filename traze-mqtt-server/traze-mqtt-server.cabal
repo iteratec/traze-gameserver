@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 40a3fcf15bd74863200034d392b9842595ff177008a59b569586dc82703dddcc
+-- hash: 8147c1662eb7d0de383fe5c794df11f99ab9f781e563ccceb5f5293dbba0f323
 
 name:           traze-mqtt-server
 version:        0.1.0.0
@@ -14,7 +14,7 @@ bug-reports:    https://github.com/iteratec/traze-gameserver/issues
 author:         Benjamin Brunzel
 maintainer:     benjamin.brunzel@iteratec.de
 copyright:      2017 Benjamin Brunzel
-license:        AGPL
+license:        AGPL-3
 build-type:     Simple
 cabal-version:  >= 1.10
 extra-source-files:

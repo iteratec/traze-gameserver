@@ -1,7 +1,7 @@
 name:                traze
 version:             0.1.0.0
 github:              "iteratec/traze-gameserver"
-license:             AGPL
+license:             BSD3
 author:              "Benjamin Brunzel"
 maintainer:          "benjamin.brunzel@iteratec.de"
 copyright:           "2017 Benjamin Brunzel"
@@ -19,28 +19,19 @@ category:            Game
 # common to point users to the README.md file.
 description:         Please see the README on Github at <https://github.com/iteratec/traze-gameserver#readme>
 
-dependencies:
-- base
-- text
-- aeson
-- random
-- mtl
-- MonadRandom
-- colour
-- time
-
 library:
   source-dirs: src
   dependencies:
-  - bytestring
-  - uuid
-  - stm
-  - split
-  - random
+  - MonadRandom >= 0.5 && < 0.6
+  - aeson >= 1.4 && < 1.5
+  - base >= 4.12 && < 4.13
+  - colour >= 2.3.4 && < 2.4
+  - mtl >= 2.2.2 && < 2.3
+  - uuid >= 1.3.13 && < 1.4
 
 tests:
   traze-test:
-    main:                Spec.hs
+    main:            Spec.hs
     source-dirs:         
     - test
     ghc-options:

@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-13.2
+resolver: lts-13.3
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -42,7 +42,6 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps: 
-#  - stm-2.4.5.0
   - git: https://github.com/sztupi/c-mosquitto
     commit: 789f5bedb4a042be3fcd8b33fec8a719b53b65c2
 
@@ -53,7 +52,7 @@ extra-deps:
 # extra-package-dbs: []
 
 ghc-options:
-    traze: -Wall
+    traze: -Wall -threaded
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true

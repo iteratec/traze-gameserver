@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 97e35f9c763e183fa8a2b613160e6b5a492789649d7699e78f5d707c7db80736
+-- hash: 40438c4f50b9d2db85393ec940d213101d23eb586192a585e7faf9401c5298b1
 
 name:           traze-cli-client
 version:        0.1.0.0
@@ -14,7 +14,7 @@ bug-reports:    https://github.com/iteratec/traze-gameserver/issues
 author:         Benjamin Brunzel
 maintainer:     benjamin.brunzel@iteratec.de
 copyright:      2017 Benjamin Brunzel
-license:        AGPL
+license:        AGPL-3
 build-type:     Simple
 cabal-version:  >= 1.10
 extra-source-files:

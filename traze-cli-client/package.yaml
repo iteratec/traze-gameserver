@@ -1,7 +1,7 @@
 name:                traze-cli-client
 version:             0.1.0.0
 github:              "iteratec/traze-gameserver"
-license:             AGPL
+license:             AGPL-3
 author:              "Benjamin Brunzel"
 maintainer:          "benjamin.brunzel@iteratec.de"
 copyright:           "2017 Benjamin Brunzel"

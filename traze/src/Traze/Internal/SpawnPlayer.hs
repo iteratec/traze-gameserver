@@ -4,8 +4,6 @@ import Traze.Internal.GameTypes
 import Traze.Internal.Tuple
 import Traze.Internal.SpawnQueue
 
-import Data.List (find)
-
 spawnPlayer :: Grid -> (Grid, Maybe Bike)
 spawnPlayer g = case getSpawnCoord g of
     Nothing   -> (g, Nothing)
