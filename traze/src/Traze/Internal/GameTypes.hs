@@ -5,51 +5,66 @@ import Traze.Internal.SpawnQueue
 import GHC.Generics
 import Data.Aeson
 
--- A coordinate on the grid
+-- | A coordinate on the grid (x, y)
 type Coordinate = (Int, Int)
 
--- gridsize (xMax, yMax)
+-- | size of the grid (xMax, yMax)
 type GridSize = (Int, Int)
 
-data Course = N | E | W | S
+-- | The course in which a bike can be heading
+data Course = N   -- ^ North
+            | E   -- ^ East
+            | W   -- ^ South
+            | S   -- ^ West
     deriving (Generic, Show, Eq)
 
 instance ToJSON Course where
     toEncoding = genericToEncoding defaultOptions
 instance FromJSON Course
 
--- the unPlayers id number
+-- | a unique identifing number for a player
 type PlayerId = Int
 
-data Bike = Bike {
-    bikePlayerId :: PlayerId,
-    unCourse :: Course,
-    unCurrentLocation :: Coordinate,
-    unTrail :: Trail
-} deriving (Show, Eq)
 
+-- | the trail of a bike on the grid
 type Trail = [Coordinate]
 
-data Command = MoveCommand PlayerId Move
-             | Quit PlayerId
-    deriving (Show, Eq)
--- a move of a unPlayer on the grid
-data Move = Steer Course
-          | Straight
-    deriving (Show, Eq)
-
-data Grid = Grid {
-    unGridSize :: GridSize
-   ,unBikes    :: [Bike]
-   ,unQueue    :: [QueueItem Bike]
+-- | a bike that is currently alive on the grid
+data Bike = Bike {
+    bikePlayerId :: PlayerId,         -- ^ the player id of the player controlling this bike
+    unCourse :: Course,               -- ^ the course the bike is heading towards
+    unCurrentLocation :: Coordinate,  -- ^ the current location on the grid
+    unTrail :: Trail                  -- ^ the bikes trail on the grid
 } deriving (Show, Eq)
 
-type TimeToLive = Int
+-- | a move of a Player on the grid
+data Move = Steer Course   -- ^ steer towards a given course
+          | Straight       -- ^ continue going straight
+    deriving (Show, Eq)
 
-data Death = Suicide PlayerId
-           --     Killer  Casulty
-           | Frag PlayerId  PlayerId
-           | Collision PlayerId PlayerId
+-- | a players command for his bike during a time frame
+data Command = MoveCommand PlayerId Move -- ^ move for the bike of player with id
+             | Quit PlayerId             -- ^ quit the game
+    deriving (Show, Eq)
+
+-- | representation of a game grid at a time
+data Grid = Grid {
+    unGridSize :: GridSize           -- ^ physical limits of the grid
+   ,unBikes    :: [Bike]             -- ^ bikes that are active on the grid
+   ,unQueue    :: [QueueItem Bike]   -- ^ bikes that are waiting to be spawned on the grid
+} deriving (Show, Eq)
+
+type Killer = PlayerId
+type Casulty = PlayerId
+
+-- | death of a player on the grid
+data Death = Suicide PlayerId            -- ^ suicide of player with ID.
+                                         --   May be caused by driving against the grid wall
+                                         --   or by hitting the own trail.
+                                         --
+           | Frag Killer  Casulty        -- ^ the casulty drove into the killers trail.
+           | Collision Casulty Casulty   -- ^ both casulties drove onto the same coodinate 
+                                         --   at the same time
     deriving (Show, Eq)
 
 getCommandPlayerId :: Command -> PlayerId
