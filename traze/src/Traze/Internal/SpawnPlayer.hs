@@ -8,7 +8,7 @@ spawnPlayer :: Grid -> (Grid, Maybe Bike)
 spawnPlayer g = case getSpawnCoord g of
     Nothing   -> (g, Nothing)
     Just coord -> (Grid (unGridSize g) (unBikes g) ((enQueue b) : (unQueue g)), Just b)
-        where b = Bike (newPlayerId (map (bikePlayerId) $ (unBikes g) ++ (map unQueueItem $ unQueue g))) N (coord) []
+        where b = Bike (newPlayerId (map (bikePlayerId) $ (unBikes g) ++ (map retrieveQueueItem $ unQueue g))) N (coord) []
 
 newPlayerId :: [PlayerId] -> PlayerId
 newPlayerId [] = 1

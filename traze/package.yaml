@@ -39,6 +39,7 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - base
     - traze
     - hspec
     - HUnit

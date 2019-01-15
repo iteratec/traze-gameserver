@@ -54,11 +54,3 @@ data GridCommand = GridCommand
 data JoinRequest = JoinRequest Nick MqttClientName
   deriving (Show, Eq)
 
-isGridCommand :: Interaction -> Maybe GridCommand
-isGridCommand (GridInteraction g) = Just g
-isGridCommand _ = Nothing
-
-isJoinRequest :: Interaction -> Maybe JoinRequest
-isJoinRequest (JoinInteraction j) = Just j
-isJoinRequest _ = Nothing
-

@@ -131,7 +131,10 @@ instance FromJSON PlayerOutput where
 
 gridToGameState :: Grid -> GameState
 gridToGameState g =
-    GameState maxY maxX (getTiles g) (map getOutputBike gridBikes) (map (unCurrentLocation . unQueueItem) queue)
+    GameState maxY maxX 
+      (getTiles g) 
+      (map getOutputBike gridBikes) 
+      (map (unCurrentLocation . retrieveQueueItem) queue)
     where (Grid (maxX, maxY) gridBikes queue) = g
 
 playerToAcceptJoinRequestOutput :: Player -> AcceptJoinRequestOutput
