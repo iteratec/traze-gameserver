@@ -5,8 +5,8 @@ Copyright   : (c) Benjamin Brunzel, 2018
 License     : BSD3
 Maintainer  : benjamin.brunzel@gmail.com
 
-This module contains model definitions for turning the 
-game defined in "Traze.Internal.GameTypes" into a computer network 
+This module contains model definitions for turning the
+game defined in "Traze.Internal.GameTypes" into a computer network
 based client server game.
 -}
 
@@ -51,7 +51,7 @@ instance Ord Player where
   compare one two = compare (playerPlayerId one) (playerPlayerId two)
 
 -- | player interaction with the grid instance
-data Interaction 
+data Interaction
   = GridInteraction GridCommand
   | JoinInteraction JoinRequest
   deriving (Show, Eq)
@@ -65,4 +65,3 @@ data GridCommand = GridCommand
 -- | request for joining a given instance
 data JoinRequest = JoinRequest Nick MqttClientName
   deriving (Show, Eq)
-

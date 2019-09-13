@@ -9,14 +9,15 @@ License     : BSD3
 Maintainer  : benjamin.brunzel@gmail.com
 
 This module provides functions for creating a
-game instance as well as spawning players and 
-running the actual instance. 
+game instance as well as spawning players and
+running the actual instance.
 -}
 module Traze.Internal.Instance (
   stepInstance,
   runSpawning,
   applyDeath,
-  incrementPlayerFrag
+  incrementPlayerFrag,
+  spawnPlayerOnInstance
 ) where
 
 import Traze.Internal.InstanceTypes as IT
@@ -33,7 +34,7 @@ import Control.Monad.Random
 
 -- | perform a game step in the state monad
 stepInstance :: (MonadState Instance m) => [GridCommand]   -- ^ player commands for this round
-                                        -> m [Death]       -- ^ new state and list of 
+                                        -> m [Death]       -- ^ new state and list of
                                                            --   resulting deaths
 stepInstance interactions = do
   inst @ (Instance grid instanceName players) <- get
@@ -46,30 +47,36 @@ stepInstance interactions = do
   return deaths
 
 -- | spawn new players on the grid. (Spawning only one per round)
-runSpawning :: (MonadRandom m, MonadState Instance m) => [JoinRequest] -> m [Player]
-runSpawning interactions = do
-  newPlayers <- catMaybes <$> mapM spawnPlayerOnInstance interactions
-  return newPlayers
+runSpawning :: (MonadRandom m, MonadState Instance m) => [JoinRequest] -> m [Either String Player]
+runSpawning interactions = mapM joinPlayerOrError interactions
+
+joinPlayerOrError :: (MonadRandom m, MonadState Instance m) => JoinRequest -> m (Either String Player)
+joinPlayerOrError jr @ (JoinRequest _ mqttClientName) = do
+    spawnedPlayer <- spawnPlayerOnInstance jr
+    case spawnedPlayer of
+        Nothing -> return (Left mqttClientName)
+        Just player -> return (Right player)
 
 -- | spawn a player on the instance
 spawnPlayerOnInstance :: (MonadRandom m, MonadState Instance m) => JoinRequest -> m (Maybe Player)
 spawnPlayerOnInstance (JoinRequest nick mqttName) = do
   Instance grid instanceName players <- get
-  let (grid', maybeBike) = spawnPlayer grid
-  case maybeBike of
-    Nothing -> return Nothing
-    Just bike -> do
-      newUUID <- getRandom
-      let pid = bikePlayerId bike
-          initialPos = GT.unCurrentLocation bike
-          playerColor = (trazeColorStrings !! pid)
-          newPlayer = Player pid nick 0 0 playerColor newUUID mqttName initialPos
-      put (Instance grid' instanceName (newPlayer : players))
-      return $ Just newPlayer
+  if nick `elem` (map unPlayerName players) then return Nothing else do
+      let (grid', maybeBike) = spawnPlayer grid
+      case maybeBike of
+        Nothing -> return Nothing
+        Just bike -> do
+          newUUID <- getRandom
+          let pid = bikePlayerId bike
+              initialPos = GT.unCurrentLocation bike
+              playerColor = (trazeColorStrings !! pid)
+              newPlayer = Player pid nick 0 0 playerColor newUUID mqttName initialPos
+          put (Instance grid' instanceName (newPlayer : players))
+          return $ Just newPlayer
 
 -- | check session and generate the resulting command
 commandFromInteraction :: Instance -> Interaction -> Maybe Command
-commandFromInteraction inst (GridInteraction (GridCommand c session)) = 
+commandFromInteraction inst (GridInteraction (GridCommand c session)) =
   if isJust player && session == unSession (fromJust player)
     then Just c
     else Nothing
@@ -79,7 +86,7 @@ commandFromInteraction _ _ = Nothing
 
 -- | apply deaths to the player list
 playersAfterDeaths :: [Player] -> [Death] -> [Player]
-playersAfterDeaths ps ds = foldr applyDeath ps ds 
+playersAfterDeaths ps ds = foldr applyDeath ps ds
 
 -- | apply death to the player list. removing dead players and incrementing frag counts
 applyDeath :: Death -> [Player] -> [Player]
@@ -94,14 +101,14 @@ removePlayer pid ps = filter (\p -> not ((playerPlayerId p) == pid)) ps
 
 -- | increment frag count for the player with a given id
 incrementFragCount :: PlayerId -> [Player] -> [Player]
-incrementFragCount pid ps = 
-  case findPlayerById pid ps of 
+incrementFragCount pid ps =
+  case findPlayerById pid ps of
     Nothing -> ps
     Just player -> (incrementPlayerFrag player) : removePlayer pid ps
 
 -- | increment the frag count of a given player
 incrementPlayerFrag :: Player -> Player
-incrementPlayerFrag Player {..} = Player playerPlayerId unPlayerName (unFrags + 1) 
+incrementPlayerFrag Player {..} = Player playerPlayerId unPlayerName (unFrags + 1)
   unDeaths unColor unSession unMqttClientName unInitPosition
 
 findPlayerById :: PlayerId -> [Player] -> Maybe Player
@@ -109,4 +116,3 @@ findPlayerById pid = find (\p -> ((playerPlayerId p) == pid))
 
 getPlayerById :: Instance -> PlayerId -> Maybe Player
 getPlayerById inst pid = findPlayerById pid (unPlayer inst)
-

@@ -46,17 +46,17 @@ sampleLength :: Integer
 sampleLength = oneSecond `div` 4
 
 data AppEnv = AppEnv {
-    config :: Config, 
+    config :: Config,
     mqttQueue :: TQueue MqttMessage,
     inputQueue :: TQueue Interaction,
     gameStateQueue :: TQueue Instance,
-    newPlayerQueue :: TQueue Player,
+    newPlayerQueue :: TQueue (Either String Player),
     tickerQueue :: TQueue Tick
 }
 
 initAppEnv :: (MonadIO m) => Config -> m AppEnv
 initAppEnv config = liftIO $ do
-    
+
     -- outgoing messages via mqtt
     mqttQueue <- atomically $ newTQueue
 
@@ -104,8 +104,10 @@ executeInstanceStep = do
 
     let joinRequests = catMaybes $ map isJoinRequest is
 
+    -- spawn first request in list
     newPlayers <- runSpawning $ maybeToList $ listToMaybe $ joinRequests
 
+    -- requeue remaining join requests
     liftIO $ atomically $ mapM_ (writeTQueue inputQueue) $ fmap JoinInteraction $ safeTail joinRequests
 
     spawnTime <- liftIO $ getSystemTime
@@ -143,4 +145,3 @@ isGridCommand _ = Nothing
 isJoinRequest :: Interaction -> Maybe JoinRequest
 isJoinRequest (JoinInteraction j) = Just j
 isJoinRequest _ = Nothing
-

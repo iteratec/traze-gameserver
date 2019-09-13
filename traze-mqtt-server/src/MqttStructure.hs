@@ -19,6 +19,7 @@ data MessageType
     = Steering InstanceName PlayerId
     | Bail InstanceName PlayerId
     | Join InstanceName
+    | Register InstanceName
     deriving (Show, Eq)
 
 parseTopic :: String -> Maybe MessageType
@@ -60,4 +61,3 @@ writeBailCommand queue pid (Just input) = case uuid of
 writeJoinCommand :: TQueue Interaction -> Maybe JoinInput -> STM()
 writeJoinCommand _ Nothing = return ()
 writeJoinCommand queue (Just joinInput) = writeTQueue queue $ JoinInteraction $ JoinRequest (joInName joinInput) (joInMqttClientName joinInput)
-    

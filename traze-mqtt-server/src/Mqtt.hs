@@ -18,9 +18,9 @@ import Data.ByteString.Lazy (toStrict)
 import System.Random
 
 import qualified Network.Mosquitto as M
-import Network.Mosquitto.Internal.Types  
+import Network.Mosquitto.Internal.Types
 
--- | publish 
+-- | publish
 mqttThread :: TQueue MqttMessage -> TQueue Interaction -> Config -> IO ()
 mqttThread messageQueue commandQueue config = M.withMosquittoLibrary $ do
     mqttClientName <- randomIO
@@ -67,12 +67,12 @@ castTickThread input output = do
 castGameInstancesThread :: TQueue Instance -> TQueue MqttMessage -> STM ()
 castGameInstancesThread input output = do
     inst <- peekTQueue input
-    let payload = (toStrict $ encode $ [(InstancesOutput (unName inst) (length $ unPlayer inst))]) 
+    let payload = (toStrict $ encode $ [(InstancesOutput (unName inst) (length $ unPlayer inst))])
     writeTQueue output (MqttMessage "traze/games" payload True)
-    
+
 castInstanceThread :: TQueue Instance -> TQueue MqttMessage -> STM ()
 castInstanceThread input output = do
-    inst <- readTQueue input 
+    inst <- readTQueue input
     let topic = "traze/1/grid\0"
     let payload = (\i -> toStrict $ encode $ gridToGameState $ unGrid i) inst
     let message = MqttMessage topic payload True
@@ -81,15 +81,21 @@ castInstanceThread input output = do
     writeTQueue output message
     writeTQueue output playerMessage
 
-castNewPlayerThread :: TQueue Player -> TQueue MqttMessage -> STM ()
+castNewPlayerThread :: TQueue (Either String Player) -> TQueue MqttMessage -> STM ()
 castNewPlayerThread input output = do
     newP <- readTQueue input
-    let topic = (\p -> "traze/1/player/"++ (unMqttClientName p) ++ "\0") newP
-    let payload = (\p -> toStrict $ encode $ playerToAcceptJoinRequestOutput p) newP
+    let topic = getTopic newP
+    let payload = (\p -> toStrict $ encode $ playerToJoinRequestOutput p) newP
     let message = MqttMessage topic payload False
     writeTQueue output message
+
+getTopic :: Either String Player -> String
+getTopic (Left mqttClientName) = getTopicString mqttClientName
+getTopic (Right player) = getTopicString $ unMqttClientName player
+
+getTopicString :: String -> String
+getTopicString mqttClientName = "traze/1/player/"++ mqttClientName ++ "\0"
 
 credentialsToTuple :: Maybe Credentials -> Maybe (String, String)
 credentialsToTuple Nothing = Nothing
 credentialsToTuple (Just (Credentials {..})) = Just (username, password)
-
