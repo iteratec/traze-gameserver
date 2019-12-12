@@ -1,8 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8147c1662eb7d0de383fe5c794df11f99ab9f781e563ccceb5f5293dbba0f323
+-- hash: ea5fcbe38bdc5c6a5988a965f68a6cabc115fbc9efa0f7c07b711a883ef23642
 
 name:           traze-mqtt-server
 version:        0.1.0.0
@@ -16,10 +18,9 @@ maintainer:     benjamin.brunzel@iteratec.de
 copyright:      2017 Benjamin Brunzel
 license:        AGPL-3
 build-type:     Simple
-cabal-version:  >= 1.10
 extra-source-files:
-    ChangeLog.md
     README.md
+    ChangeLog.md
 
 source-repository head
   type: git

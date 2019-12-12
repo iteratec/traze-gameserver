@@ -63,6 +63,7 @@ data Grid = Grid {
     unGridSize :: GridSize           -- ^ physical limits of the grid
    ,unBikes    :: [Bike]             -- ^ bikes that are active on the grid
    ,unQueue    :: [QueueItem Bike]   -- ^ bikes that are waiting to be spawned on the grid
+   ,unTick     :: Int
 } deriving (Show, Eq)
 
 type Killer = PlayerId
@@ -74,11 +75,10 @@ data Death = Suicide PlayerId            -- ^ suicide of player with ID.
                                          --   or by hitting the own trail.
                                          --
            | Frag Killer  Casulty        -- ^ the casulty drove into the killers trail.
-           | Collision Casulty Casulty   -- ^ both casulties drove onto the same coodinate 
+           | Collision Casulty Casulty   -- ^ both casulties drove onto the same coodinate
                                          --   at the same time
     deriving (Show, Eq)
 
 getCommandPlayerId :: Command -> PlayerId
 getCommandPlayerId (MoveCommand p _) = p
 getCommandPlayerId (Quit p) = p
-

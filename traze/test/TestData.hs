@@ -18,7 +18,7 @@ bike3 = Bike 3 W (1,1) []
 -- X11
 -- XXX
 grid1 :: Grid
-grid1 = Grid (3,3) [(Bike 1 N (1,2) [(1,1), (2,1), (2,2)])] [] 
+grid1 = Grid (3,3) [(Bike 1 N (1,2) [(1,1), (2,1), (2,2)])] [] 1
 
 -- 1OX2
 -- 1O22
@@ -28,7 +28,7 @@ grid2 :: Grid
 grid2 = Grid (4,4) [
     (Bike 1 E (1,3) [(0,3), (0,2), (0,1)]),
     (Bike 2 W (1,2) [(2,2), (3,2), (3,3)])
-    ] []
+    ] [] 2
 
 -- XXX
 -- 1X2
@@ -37,7 +37,7 @@ grid3 :: Grid
 grid3 = Grid (3,3) [
     (Bike 1 W (0,1) []),
     (Bike 2 E (2,1) [])
-    ] []
+    ] [] 3
 
 player1 :: Player
 player1 = Player 1 "Player one" 0 0 "#FFFFFF" (fromJust $ fromString "c2cc10e1-57d6-4b6f-9899-38d972112d8c") "mqtt1" (1,2)
@@ -55,4 +55,3 @@ player4 = Player 4 "Player four" 0 0 "#00FF00" (fromJust $ fromString "98e6fbcb-
 
 instance1 :: Instance
 instance1 = Instance grid1 "blablubb" [player1]
-

@@ -86,7 +86,7 @@ executeInstance :: (MonadReader AppEnv m, MonadRandom m, MonadState Instance m, 
 executeInstance = forever executeInstanceStep
 
 initialGrid :: Grid
-initialGrid = Grid (62,62) [] []
+initialGrid = Grid (62,62) [] [] 0
 
 initialInstance :: Instance
 initialInstance = Instance initialGrid "1" []

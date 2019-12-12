@@ -22,18 +22,18 @@ import Data.Maybe (fromMaybe)
 import Control.Monad (msum)
 
 -- | playing one game round. Takes a list of player
---   commands and generates the next game state as well as a 
+--   commands and generates the next game state as well as a
 --   list of possible deaths as a result of the player actions
 
 play :: Grid           -- ^ The current game state
     -> [Command]       -- ^ The list of commands given by the players for this turn
     -> (Grid, [Death]) -- ^ The resulting game state, the list of deaths resulting from this turn
 
-play g cs = ((Grid (unGridSize g) bikes'' queue'), deaths ++ collisionSuicides)
+play g cs = ((Grid (unGridSize g) bikes'' queue' (unTick g + 1)), deaths ++ collisionSuicides)
     where (bikes'', collisionSuicides) = filterCollisions bikes'
           bikes' = rights $ executedCommands
           deaths = lefts $ executedCommands
-          executedCommands = map (execCommand g) $ 
+          executedCommands = map (execCommand g) $
               map (addStraightCommands cs) ((unBikes g) ++ joinedBikes)
           (popedQueue, joinedBikes) = popFromQueue (unQueue g) cs
           queue' = ageQueue popedQueue
@@ -64,7 +64,7 @@ popFromQueue qs cs = (queue', bikes)
 filterCollisions :: [Bike] -> ([Bike], [Death])
 filterCollisions bs = (bikes', deaths)
     where collidedBikes = filter (\b -> hasCollided b bs) bs
-          bikes' = filter (\b -> not $ b `elem` collidedBikes) bs 
+          bikes' = filter (\b -> not $ b `elem` collidedBikes) bs
           deaths = map (\b -> Suicide $ bikePlayerId b) collidedBikes
 
 -- | returns true if a bike collides with a bike in a given list.
@@ -89,7 +89,7 @@ execCommand g (MoveCommand p m) = case (getBikeForPlayerId g p) of
 
 -- | find the bike for a playerId
 getBikeForPlayerId :: Grid -> PlayerId -> Maybe Bike
-getBikeForPlayerId (Grid _ bs q) p =
+getBikeForPlayerId (Grid _ bs q _) p =
     let allBikes = bs ++ (map retrieveQueueItem q) in
         (find (\a -> p == bikePlayerId a) allBikes)
 
@@ -101,7 +101,7 @@ drive g b m = case death of
 
     where newCord = stepCoordinate unCourse' (unCurrentLocation b)
           unCourse' = newCourse (unCourse b) m
-          
+
           death = msum $ (getWallKiss $ unGridSize g) : (getFrag g b m) : []
 
           -- get death if out of grid
@@ -121,7 +121,7 @@ isOutOfBounds (x1,y1) (x2, y2)
 
 -- | returns the death caused by hitting an trail
 getFrag :: Grid -> Bike -> Move -> Maybe Death
-getFrag (Grid _ bikes _) b m = case fragger of
+getFrag (Grid _ bikes _ _) b m = case fragger of
     Nothing -> Nothing
     Just f -> Just $ getDeath (bikePlayerId f) (bikePlayerId b)
 
@@ -162,7 +162,7 @@ stepCoordinate S = tupleApply (id        , subtract 1)
 -- | get the playerId at a certain coordinate
 getPosPlayerId :: [Bike] -> Coordinate -> PlayerId
 getPosPlayerId bs c = fromMaybe 0 $ msum $ map (getPid c) bs
-  where 
+  where
     getPid :: Coordinate -> Bike -> Maybe PlayerId
     getPid coord b
         | coord == (unCurrentLocation b) = Just (bikePlayerId b)
@@ -174,7 +174,7 @@ getPosPlayerId bs c = fromMaybe 0 $ msum $ map (getPid c) bs
 
 getTiles :: Grid -> [[Int]]
 getTiles g = (map . map) (getPosPlayerId gridBikes) (getGridCoords gs)
-  where (Grid gs gridBikes _) = g
+  where (Grid gs gridBikes _ _) = g
 
         getGridCoords :: GridSize -> [[Coordinate]]
         getGridCoords (maxX, maxY) =
@@ -182,4 +182,3 @@ getTiles g = (map . map) (getPosPlayerId gridBikes) (getGridCoords gs)
 
         getLineCoords :: GridSize -> Int -> [Coordinate]
         getLineCoords (maxY,_) x = [(x,y) | y <- [0..(maxY-1)]]
-

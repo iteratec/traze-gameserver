@@ -29,6 +29,9 @@ instance FromJSON InstancesOutput where
 data GameState = GameState {
     height :: Int,
     width :: Int,
+    currentTick :: Int,
+    gameStartTick :: Int,
+    tickMs :: Int,
     tiles :: [[Int]],
     bikes :: [OutputBike],
     spawns :: [Coordinate]
@@ -145,11 +148,11 @@ instance FromJSON BailInput where
 
 gridToGameState :: Grid -> GameState
 gridToGameState g =
-    GameState maxY maxX
+    GameState maxY maxX ticks 0 250
       (getTiles g)
       (map getOutputBike gridBikes)
       (map (unCurrentLocation . retrieveQueueItem) queue)
-    where (Grid (maxX, maxY) gridBikes queue) = g
+    where (Grid (maxX, maxY) gridBikes queue ticks) = g
 
 playerToJoinRequestOutput :: Either String Player -> JoinRequestOutput
 playerToJoinRequestOutput (Left nickname) = DenyJoinRequestOutput nickname "Nickname already taken"

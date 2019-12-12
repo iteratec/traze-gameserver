@@ -3,7 +3,6 @@ module AgeQueueSpec (spec) where
 import Traze.Internal.SpawnQueue
 
 import Test.Hspec
-import Test.QuickCheck
 
 spec :: Spec
 spec =
@@ -18,4 +17,3 @@ spec =
             ageQueue emptyList `shouldBe` []
             where emptyList :: [QueueItem Int]
                   emptyList = []
-
