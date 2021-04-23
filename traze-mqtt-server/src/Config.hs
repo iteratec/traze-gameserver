@@ -64,7 +64,7 @@ instance Semigroup PartialConfig where
 
 instance Monoid PartialConfig where
   mempty = PartialConfig mempty mempty mempty mempty mempty
- 
+
 data InstanceConfig = InstanceConfig {
   instanceName :: String
 } deriving (Eq, Show)
@@ -112,4 +112,3 @@ defaultPartialConfig = mempty
   , pcBrokerPort = pure 1883
   , pcInstances = [ InstanceConfig "1" ]
   }
-

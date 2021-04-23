@@ -5,10 +5,13 @@ import Traze.Internal.Tuple
 import Traze.Internal.SpawnQueue
 
 spawnPlayer :: Grid -> (Grid, Maybe Bike)
-spawnPlayer g = case getSpawnCoord g of
-    Nothing   -> (g, Nothing)
-    Just coord -> (Grid (unGridSize g) (unBikes g) ((enQueue b) : (unQueue g)) (unTick g), Just b)
-        where b = Bike (newPlayerId (map (bikePlayerId) $ (unBikes g) ++ (map retrieveQueueItem $ unQueue g))) N (coord) []
+spawnPlayer g@(Grid size bikes _ r@(Round currentTick startAtTick))
+    | currentTick >= startAtTick = (g, Nothing)
+    | otherwise =
+         case getSpawnCoord g of
+             Nothing    -> (g, Nothing)
+             Just coord -> (Grid size (b:bikes) [] r, Just b)
+               where b = Bike (newPlayerId (map (bikePlayerId) $ (unBikes g))) N coord []
 
 newPlayerId :: [PlayerId] -> PlayerId
 newPlayerId [] = 1
@@ -62,6 +65,7 @@ awayFromWalls :: Grid -> Coordinate -> Int
 awayFromWalls (Grid (maxX, maxY) _ _ _) (x,y) = min (afwSingleAxis maxX x) (afwSingleAxis maxY y)
 
 awayFromCoordinates :: Coordinate -> [Coordinate] -> Int
+awayFromCoordinates _ [] = 0
 awayFromCoordinates c cs = minimum $ map (awayFromCoordinate c) cs
 
 afwSingleAxis :: Int -> Int -> Int

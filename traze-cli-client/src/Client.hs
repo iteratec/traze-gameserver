@@ -40,9 +40,9 @@ instance Options.Options ClientOptions where
         <*> simpleOption "broker" "sandbox.hh.iteratec.de"
             "The MQTT broker hostname hosting the traze game"
         <*> simpleOption "port" 1883
-            "The port to connect to the MQTT broker on" 
+            "The port to connect to the MQTT broker on"
 
-data ClientMessageType = JoinAcceptance | TickerMessage 
+data ClientMessageType = JoinAcceptance | TickerMessage
 
 main :: IO ()
 main = runCommand $ \opts _ -> do
@@ -99,7 +99,7 @@ inputThread queue = do
     char <- getInput
     case command char of
         Nothing -> return ()
-        Just c -> do 
+        Just c -> do
             atomically $ writeTQueue queue c
 
         where command :: Char -> Maybe Command
@@ -112,7 +112,7 @@ getInput = hSetEcho stdin False
 
 clientMqttThread :: TMVar (Int, String) -> TQueue (String, BS.ByteString) -> ClientOptions -> String -> IO ()
 clientMqttThread sessionVar gridQueue opts nick = M.withMosquittoLibrary $ do
-    mqttClientName <- randomIO 
+    mqttClientName <- randomIO
     m <- M.newMosquitto True (toString mqttClientName) (Just ())
     M.setTls m "" $ Just ("", "")
     M.setTlsInsecure m True
@@ -142,12 +142,15 @@ clientMqttThread sessionVar gridQueue opts nick = M.withMosquittoLibrary $ do
 handleMessage :: TMVar (Int, String) -> Message -> IO ()
 handleMessage mvar (Message _ top payl _ _) = do
     case (parseTopic top) of
-        Just (JoinAcceptance) -> do 
+        Just (JoinAcceptance) -> do
             case decode $ fromStrict payl of
                 Just (AcceptJoinRequestOutput pid _ session _ pos) -> do
                     putStrLn ("spawned with pid " ++ (show pid) ++ " at position " ++ (show pos))
                     putStrLn "steer your bike with w, a, s, d. Press q to bail."
                     atomically $ putTMVar mvar (pid, session)
+                Just (DenyJoinRequestOutput name joinStatus) -> do
+                    putStrLn ("join request denied! name:" ++ (show name) ++ " joinStatus: " ++ (show joinStatus))
+                    return ()
                 Nothing -> return ()
         Just (TickerMessage) -> do
             case decode $ fromStrict payl of
@@ -160,7 +163,7 @@ handleMessage mvar (Message _ top payl _ _) = do
                 Nothing -> return ()
         Nothing -> putStrLn ("received unexpected message with topic: " ++ top ++ " and payload: " ++ (cs payl))
 
- 
+
 parseTopic :: String -> Maybe ClientMessageType
 parseTopic top = case (splitOn "/" top) of
      ("traze" : _ : "player" : _ : []) -> Just $ JoinAcceptance

@@ -148,11 +148,11 @@ instance FromJSON BailInput where
 
 gridToGameState :: Grid -> GameState
 gridToGameState g =
-    GameState maxY maxX ticks 0 250
+    GameState maxY maxX ticks startAt 250
       (getTiles g)
       (map getOutputBike gridBikes)
       (map (unCurrentLocation . retrieveQueueItem) queue)
-    where (Grid (maxX, maxY) gridBikes queue ticks) = g
+    where (Grid (maxX, maxY) gridBikes queue (Round ticks startAt)) = g
 
 playerToJoinRequestOutput :: Either String Player -> JoinRequestOutput
 playerToJoinRequestOutput (Left nickname) = DenyJoinRequestOutput nickname "Nickname already taken"

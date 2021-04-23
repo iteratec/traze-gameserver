@@ -36,6 +36,8 @@ instance FromJSON Course
 -- | a unique identifing number for a player
 type PlayerId = Int
 
+-- | the speed at which a bike rides
+type Speed = Int
 
 -- | the trail of a bike on the grid
 type Trail = [Coordinate]
@@ -63,7 +65,12 @@ data Grid = Grid {
     unGridSize :: GridSize           -- ^ physical limits of the grid
    ,unBikes    :: [Bike]             -- ^ bikes that are active on the grid
    ,unQueue    :: [QueueItem Bike]   -- ^ bikes that are waiting to be spawned on the grid
-   ,unTick     :: Int
+   ,unRound     :: Round
+} deriving (Show, Eq)
+
+data Round = Round {
+    unTick :: Int,
+    unGameStartTick :: Int
 } deriving (Show, Eq)
 
 type Killer = PlayerId

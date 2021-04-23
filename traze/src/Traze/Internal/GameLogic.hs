@@ -29,15 +29,19 @@ play :: Grid           -- ^ The current game state
     -> [Command]       -- ^ The list of commands given by the players for this turn
     -> (Grid, [Death]) -- ^ The resulting game state, the list of deaths resulting from this turn
 
-play g cs = ((Grid (unGridSize g) bikes'' queue' (unTick g + 1)), deaths ++ collisionSuicides)
+play g@(Grid size bikes queue r@(Round currentTick startAtTick)) cs
+    | currentTick >= startAtTick && length bikes == 1 = (Grid size [] [] (Round 0 startAtTick), [Suicide $ bikePlayerId ( head bikes)])
+    | otherwise = ((Grid size bikes'' queue' $ stepRound r), deaths ++ collisionSuicides)
     where (bikes'', collisionSuicides) = filterCollisions bikes'
           bikes' = rights $ executedCommands
           deaths = lefts $ executedCommands
           executedCommands = map (execCommand g) $
-              map (addStraightCommands cs) ((unBikes g) ++ joinedBikes)
-          (popedQueue, joinedBikes) = popFromQueue (unQueue g) cs
+              map (addStraightCommands cs) (bikes ++ joinedBikes)
+          (popedQueue, joinedBikes) = popFromQueue queue cs
           queue' = ageQueue popedQueue
 
+stepRound :: Round -> Round
+stepRound (Round ticks startAt) = Round (ticks + 1) startAt
 
 -- | returns true if there is a player with playerId on the grid
 
@@ -95,9 +99,11 @@ getBikeForPlayerId (Grid _ bs q _) p =
 
 -- | drive a bike on the grid for one step
 drive :: Grid -> Bike -> Move -> Either Death Bike
-drive g b m = case death of
-    Just d  -> Left d
-    Nothing -> Right $ driveBike b m
+drive g@(Grid _ _ _ (Round tick startAt)) b m
+      | tick < startAt = Right $ driveBike b 0 m
+      | otherwise = case death of
+            Just d  -> Left d
+            Nothing -> Right $ driveBike b 1 m
 
     where newCord = stepCoordinate unCourse' (unCurrentLocation b)
           unCourse' = newCourse (unCourse b) m
@@ -142,8 +148,9 @@ getFrag (Grid _ bikes _ _) b m = case fragger of
               else Frag p killer
 
 -- | update a bikes location as well as trail based on a given move
-driveBike :: Bike -> Move -> Bike
-driveBike b m = Bike (bikePlayerId b) (newCourse (unCourse b) m) newLocation newTrail
+driveBike :: Bike -> Speed -> Move -> Bike
+driveBike b 0 m = Bike (bikePlayerId b) (newCourse (unCourse b) m) (unCurrentLocation b) (unTrail b)
+driveBike b _ m = Bike (bikePlayerId b) (newCourse (unCourse b) m) newLocation newTrail
     where newLocation = stepCoordinate (newCourse (unCourse b) m) (unCurrentLocation b)
           newTrail = (unCurrentLocation b) : (unTrail b)
 
